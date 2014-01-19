@@ -1,0 +1,65 @@
+# Mac preview files
+.DS_Store
+
+# IntelliJ project files
+*.iml
+*.ipr
+*.iws
+.idea
+*.idea
+.idea*
+
+# Eclipse project files
+.project
+.springBeans
+.classpath
+MANIFEST.MF
+.settings/
+
+# Target directories
+target/
+
+# Cucumber+Selenium test results
+automated-tests/test-results/
+automated-tests/classes/
+automated-tests/build/
+automated-tests/out/
+automated-tests/target
+
+components/exporter/activemq-data/
+activemq-data
+conf/rewrites/rewrite.dev.*.conf
+!conf/rewrites/rewrite.dev.*.intl.conf
+
+# minified static content
+*-min.css
+
+# minified static javascript
+*-min.js
+
+webapp/www/*/build/styles/generated/
+
+components/services/src/test/resources/com/netaporter/embeddedSolr/classification/conf/nap_classification/data/
+
+# SASS compilation
+.sass-cache/
+
+webapp/www/MrPorter/build/styles/sprites.css
+
+# Dynamically generated Javascript resource bundle files
+webapp/www/MrPorter/build/scripts/locale
+webapp/www/NetAPorter/build/scripts/locale
+webapp/www/OutNet/build/scripts/locale
+velocity.log
+webapp/www/lib/gemrepository/
+webapp/www/gem-sources-updated
+
+.gradle/
+
+chromedriver.log
+
+webapp/www/shared/build/images/generated/
+
+# Ignore Node.js dependencies
+webapp/www/www-build-conf/node_modules
+
