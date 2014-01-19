@@ -1,4 +1,4 @@
-name := "Spray Example"
+name := "Api-STH"
 
 version := "0.1.0-SNAPSHOT"
 
