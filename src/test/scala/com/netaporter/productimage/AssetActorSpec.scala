@@ -1,14 +1,13 @@
 package com.netaporter.productimage
 
-import akka.testkit.{TestActorRef, ImplicitSender, TestKit}
+import akka.testkit.{ TestActorRef, ImplicitSender, TestKit }
 import akka.actor.ActorSystem
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike}
+import org.scalatest.{ BeforeAndAfterAll, FlatSpecLike }
 import com.netaporter.productimage.service.ProductAssetAvailabilityService
 
 import com.netaporter._
 
-
-import com.netaporter.productimage.domain.{Assets, Asset}
+import com.netaporter.productimage.domain.{ Assets, Asset }
 
 import com.netaporter.ResourceIdImages
 import com.netaporter.ResourceIdVideos
@@ -33,16 +32,13 @@ class AssetActorSpec extends TestKit(ActorSystem()) with FlatSpecLike with Impli
     model ! ResourceId(405209)
     val lst = expectMsgType[Assets]
     assert(lst.assets.size === 5)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") ).size === 1)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") )(0).fileName === "405209_detail.flv")
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("image") ).size === 4)
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video")).size === 1)
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video"))(0).fileName === "405209_detail.flv")
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("image")).size === 4)
   }
 
-
-
-
   "An actor " should "return 4 ordered images for this pid" in {
-    model ! ResourceIdImages(405209,true)
+    model ! ResourceIdImages(405209, true)
     val lst = expectMsgType[Assets]
     assert(lst.assets.size === 4)
     assert(lst.assets(0).fileName == "405209_fr_xs.jpg")
@@ -60,19 +56,19 @@ class AssetActorSpec extends TestKit(ActorSystem()) with FlatSpecLike with Impli
   }
 
   "An actor" should "return 6 images and 1 video file for those pids" in {
-    model ! ResourceIds(Seq(405209,405210))
+    model ! ResourceIds(Seq(405209, 405210))
     val lst = expectMsgType[Assets]
     assert(lst.assets.size === 7)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") ).size === 1)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") )(0).fileName === "405209_detail.flv")
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video")).size === 1)
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video"))(0).fileName === "405209_detail.flv")
   }
 
   "An actor" should "return 5 images and 1 video file for those pids, not existing ones" in {
-    model ! ResourceIds(Seq(405209,405212))
+    model ! ResourceIds(Seq(405209, 405212))
     val lst = expectMsgType[Assets]
     assert(lst.assets.size === 5)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") ).size === 1)
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("video") )(0).fileName === "405209_detail.flv")
-    assert(lst.assets.seq.filter( _.fileType.equalsIgnoreCase("image") ).size === 4)
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video")).size === 1)
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("video"))(0).fileName === "405209_detail.flv")
+    assert(lst.assets.seq.filter(_.fileType.equalsIgnoreCase("image")).size === 4)
   }
 }

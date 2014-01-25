@@ -5,7 +5,7 @@ import akka.actor.ActorDSL._
 import akka.actor._
 import akka.testkit.{ EventFilter, TestActorRef, ImplicitSender, TestKit }
 import akka.actor.Terminated
-import com.netaporter.{TopLevelConfig, TopLevel}
+import com.netaporter.{ TopLevelConfig, TopLevel }
 
 class Crash extends Actor {
   def receive = { case _ => throw new Exception("crash") }

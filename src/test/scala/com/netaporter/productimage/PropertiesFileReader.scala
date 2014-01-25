@@ -14,6 +14,4 @@ trait PropertiesFileReader {
   val rootImageDir = ConfigFactory.load().getString("digital-assets.dir.root-dir-images");
   val rootVideosDir = ConfigFactory.load().getString("digital-assets.dir.root-dir-videos");
 
-
-
 }
