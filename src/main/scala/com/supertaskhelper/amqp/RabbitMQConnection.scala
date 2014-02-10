@@ -5,6 +5,8 @@ import com.rabbitmq.client.AMQP.Connection
 
 import com.rabbitmq.client
 import com.rabbitmq.client.ConnectionFactory
+import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,7 +24,8 @@ object Config {
 
 object RabbitMQConnection {
 
-  private val connection: client.Connection = null;
+  private val connection: client.Connection = null
+  private val template: RabbitTemplate = null
 
   /**
    * Return a connection if one doesn't exist. Else create
@@ -38,4 +41,22 @@ object RabbitMQConnection {
       case _ => connection
     }
   }
+
+  def getRabbitTemplate(): RabbitTemplate = {
+    template match {
+      case null => {
+        var uri = System.getenv("CLOUDAMQP_URL_EXT");
+        if (uri == null) uri = "amqp://guest:guest@localhost";
+        var rc = new com.rabbitmq.client.ConnectionFactory();
+        rc.setUri(uri);
+        val cf = new CachingConnectionFactory(rc);
+        new RabbitTemplate(cf)
+
+      }
+      case _ => template
+
+    }
+
+  }
+
 }

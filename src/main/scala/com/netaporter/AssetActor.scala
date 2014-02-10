@@ -1,6 +1,6 @@
 package com.netaporter
 
-import akka.actor.{ Props, Actor }
+import akka.actor.{ ActorLogging, Props, Actor }
 
 import com.netaporter.productimage.service.{ ProductCategoryService, ProductAssetAvailabilityService }
 
@@ -20,7 +20,7 @@ case class ResourceIds(ids: Seq[Int])
 case class ResourceIdImages(id: Int, ordered: Boolean)
 case class ResourceIdVideos(id: Int)
 
-class AssetActor extends Actor with ProductAssetAvailabilityService with ProductCategoryService {
+class AssetActor extends Actor with ProductAssetAvailabilityService with ProductCategoryService with ActorLogging {
   private def c = context.system.settings.config
   val rootDirImages = c.getString("digital-assets.dir.root-dir-images")
   val rootDirVideos = c.getString("digital-assets.dir.root-dir-videos")
@@ -28,6 +28,8 @@ class AssetActor extends Actor with ProductAssetAvailabilityService with Product
   val rootDirCacheVideos = c.getString("digital-assets.cache-dir.root-dir-videos")
   def receive = {
     case msg: ResourceId => {
+
+      log.info("CIAO MAMMA")
       //load Images = Videos
       var images = getProductImages(msg.id, rootDirImages)
       var videos = getProductVideos(msg.id, rootDirVideos)

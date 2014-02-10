@@ -6,6 +6,7 @@ import akka.io.IO
 import akka.actor.Terminated
 import akka.actor.SupervisorStrategy.{ Restart, Stop }
 import akka.util.Timeout
+import scala.reflect.io.File
 
 object TopLevel {
   def props: Props = Props[ProductionTopLevel]
@@ -17,6 +18,13 @@ class ProductionTopLevel extends TopLevel with TopLevelConfig {
   def interface = c.getString("example-app.service.interface")
   def port = c.getInt("example-app.service.port")
   def rootDir = c.getString("root.dir.asserts")
+
+  //  def portbees = File(System.getenv("PWD") + "/.genapp/ports").toDirectory.list.next().name.toInt
+  //  log.info("port+" + portbees)
+  log.info("J:" + System.getenv("sun.java.command"))
+  log.info("J2:" + System.getenv("PWD"))
+  log.info("J3:" + File(System.getenv("PWD") + "/.genapp/ports"))
+  log.info("J3:" + File(System.getenv("PWD") + "/.genapp/ports").isDirectory)
 
   // This timeout is just for resource cleanup.
   // Make sure it is 10% longer than spray's request timeout.
@@ -31,6 +39,7 @@ trait TopLevelConfig {
   def createService(model: ActorRef): ActorRef
   def interface: String
   def port: Int
+  //  def portbees: Int
 }
 
 trait TopLevel extends Actor with ActorLogging {
@@ -43,7 +52,7 @@ trait TopLevel extends Actor with ActorLogging {
   context watch service
 
   import context._
-  IO(Http) ! Http.Bind(service, interface, port)
+  //  IO(Http) ! Http.Bind(service, interface, port)
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
     case _ if model == sender => Stop
@@ -53,7 +62,7 @@ trait TopLevel extends Actor with ActorLogging {
   def receive = {
     case Http.CommandFailed(_) => context stop self
     case Terminated(`model`) => context stop self
-    case _ =>
+    case _ => service
   }
 
 }

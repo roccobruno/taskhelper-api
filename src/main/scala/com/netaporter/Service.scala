@@ -1,7 +1,7 @@
 package com.netaporter
 
 import spray.routing.{ HttpServiceActor, ExceptionHandler, HttpService }
-import akka.actor.{ Props, Actor, ActorRef }
+import akka.actor.{ ActorLogging, Props, Actor, ActorRef }
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
@@ -13,17 +13,19 @@ import spray.http.StatusCodes._
 import com.netaporter.AssetActor.{ AssetNotFound }
 import com.netaporter.productimage.domain.{ Assets, Asset }
 import spray.util.LoggingContext
+import akka.event.LoggingAdapter
 
 object ServiceActor {
   def props(model: ActorRef)(implicit timeout: Timeout): Props = Props(classOf[ServiceActor], model, timeout)
   def name = "service"
 }
 
-class ServiceActor(model: ActorRef, implicit val askTimeout: Timeout) extends HttpServiceActor with Service {
+class ServiceActor(model: ActorRef, implicit val askTimeout: Timeout) extends HttpServiceActor with Service with ActorLogging {
   override def actorRefFactory = context
   private def c = context.system.settings.config
   val cacheHeaderDuration = c.getInt("digital-assets.cache-duration")
-  def receive = runRoute(route(model))
+
+  def receive = runRoute(route(model, log))
   override def cacheDuration = cacheHeaderDuration
 }
 
@@ -39,8 +41,9 @@ trait Service extends HttpService with ServiceJsonProtocol {
 
   val MaxAge404 = 600l
 
-  def route(model: ActorRef)(implicit askTimeout: Timeout) =
+  def route(model: ActorRef, log: LoggingAdapter)(implicit askTimeout: Timeout) =
     get {
+      log.info("ROCCO")
       //get all the assets for the product with id
       path("product" / IntNumber) { id =>
         onSuccess(model ? ResourceId(id)) {
