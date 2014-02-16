@@ -94,7 +94,7 @@ trait UserService {
 
       timeToken.add(Calendar.MINUTE, duration)
 
-      if (timeToken before time) {
+      if (timeToken after time) {
         updateTimeToken(tokenDB._2)
         valid = true
       }
@@ -141,8 +141,8 @@ trait UserService {
   def updateTimeToken(token: UserToken) = {
     val collection = MongoFactory.getCollection("user_auth_token")
     val query = MongoDBObject("token" -> token.token, "email" -> token.username)
-    val update = MongoDBObject("activeFrom" -> new Date())
-    collection update (query, update)
+
+    collection update (query, $set("activeFrom" -> new Date()))
   }
 
 }
