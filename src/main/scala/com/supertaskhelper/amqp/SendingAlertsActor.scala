@@ -4,7 +4,7 @@ import akka.actor.{ ActorLogging, Actor }
 import com.rabbitmq.client.Channel
 import scala.util.parsing.json.JSON
 import spray.routing.RequestContext
-import com.supertaskhelper.common.jms.alerts.CreatedTaskAlert
+import com.supertaskhelper.common.jms.alerts.{ IAlert, CreatedTaskAlert }
 
 /**
  * Created with IntelliJ IDEA.
@@ -32,7 +32,7 @@ class SendingAlertsActor() extends Actor with ActorLogging {
 
   def receive = {
 
-    case alert: CreatedTaskAlert => {
+    case alert: IAlert => {
       RabbitMQConnection.getRabbitTemplate().convertAndSend("alerts", alert)
       context.stop(self)
     }

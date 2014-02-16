@@ -34,7 +34,7 @@ trait UserAuthentication extends UserService {
     ctx =>
       {
         //get username and password from the url
-        val usr = ctx.request.uri.query.get("usr").getOrElse("null")
+        val usr = ctx.request.uri.query.get("email").getOrElse("null")
         val pwd = ctx.request.uri.query.get("token").getOrElse("null")
 
         doAuth(usr, pwd)
@@ -49,7 +49,7 @@ trait UserAuthentication extends UserService {
 
         Future {
 
-          val user = findUserByUserName(usr)
+          val user = findUserByEmail(usr)
 
           Either.cond(user._1 && usr == user._2.email && Password.check(pwd, user._2.password),
             UserToken(userName = usr, token = createToken(user._2.email)),

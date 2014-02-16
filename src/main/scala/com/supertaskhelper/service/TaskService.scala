@@ -54,12 +54,6 @@ trait TaskService {
 
   def createTask(task: Task) = {
     val collection = MongoFactory.getCollection("task")
-    //    val taskn = Task(Option(new ObjectId), task.title, task.description, task.createdDate, task.address, task.endDate, task.time, task.status, task.userId)
-    import com.supertaskhelper.domain.TaskJsonFormat._
-    import spray.json._
-    import DefaultJsonProtocol._
-    //    val taskn = Task(Option(new ObjectId), task.title, task.description, task.createdDate, task.address, task.endDate, task.time, task.status, task.userId).toJson
-    val taskn = task.toJson
 
     collection.save(MongoDBObject(
 

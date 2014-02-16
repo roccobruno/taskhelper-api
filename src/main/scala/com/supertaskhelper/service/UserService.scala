@@ -3,7 +3,7 @@ package com.supertaskhelper.service
 import com.supertaskhelper.{ Settings, MongoFactory }
 import com.supertaskhelper.domain.{ UserRegistration, User }
 import com.mongodb.casbah.Imports._
-import java.util.{ GregorianCalendar, Calendar, Date }
+import java.util.{ Locale, GregorianCalendar, Calendar, Date }
 import akka.actor.{ Actor, ActorLogging }
 import akka.event.LoggingReceive
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
@@ -11,6 +11,9 @@ import com.mongodb.casbah.commons.MongoDBObject
 
 import com.supertaskhelper.common.domain.Password
 import com.mongodb.casbah.commons.MongoDBObject
+import com.supertaskhelper.common.enums.ACCOUNT_STATUS
+import java.util
+import com.typesafe.config.ConfigFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,10 +30,15 @@ trait UserService {
    * @param email
    * @return
    */
-  def findUserByUserName(email: String) = {
+  def findUserByEmail(email: String) = {
     val q = MongoDBObject("email" -> email)
     val collection = MongoFactory.getCollection("user")
-    var res = collection findOne q
+    getUser(collection, q)
+
+  }
+
+  private def getUser(collection: MongoCollection, query: MongoDBObject) = {
+    val res = collection findOne query
     var user: User = null
     if (res != None) {
 
@@ -40,12 +48,19 @@ trait UserService {
         userName = userResult.getAs[String]("username").get,
         isSTH = userResult.getAs[Boolean]("STH").get,
         email = userResult.getAs[String]("email").get,
-        password = userResult.getAs[String]("password").get
+        password = userResult.getAs[String]("password").get,
+        id = userResult.getAs[ObjectId]("_id").get.toString
       )
       (true, user)
     } else
       (false, user)
+  }
 
+  def findUserById(id: String) = {
+
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+    val collection = MongoFactory.getCollection("user")
+    getUser(collection, q)
   }
 
   /**
@@ -69,7 +84,7 @@ trait UserService {
   def isValidToken(token: String, email: String): Boolean = {
     var valid = false
 
-    val duration = 1 //TODO read from config
+    val duration = ConfigFactory.load().getInt("api-sth.token-session-duration")
     val tokenDB = getToken(token, email)
 
     if (tokenDB._1) {
@@ -107,13 +122,18 @@ trait UserService {
       (false, userToken)
   }
 
-  def saveUser(registrationUser: UserRegistration) {
+  def saveUser(registrationUser: UserRegistration, locale: Locale) {
     val collection = MongoFactory.getCollection("user")
     collection.save(MongoDBObject(
       "username" -> registrationUser.userName,
+      "firstName" -> registrationUser.userName,
       "isSTH" -> false,
       "email" -> registrationUser.email,
-      "passwrod" -> Password.getSaltedHash(registrationUser.password)
+      "password" -> Password.getSaltedHash(registrationUser.password),
+      "accountStatus" -> ACCOUNT_STATUS.ACTIVE.toString,
+      "withAccount" -> true,
+      "accountCreatedDate" -> new Date(),
+      "preferredLanguage" -> locale.toString
     ))
 
   }

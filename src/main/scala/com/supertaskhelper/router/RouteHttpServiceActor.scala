@@ -1,12 +1,12 @@
 package com.supertaskhelper.router
 
-import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
-import spray.util.SprayActorLogging
+import akka.actor._
+import spray.util.{ LoggingContext, SprayActorLogging }
 import spray.routing._
 
-import spray.http.MediaTypes
+import spray.http.{ StatusCodes, MediaTypes }
 import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.{ Task, Status }
+import com.supertaskhelper.domain.{ UserRegistration, Task, Status }
 import akka.event.LoggingReceive
 
 import com.supertaskhelper.domain.StatusJsonFormat._
@@ -15,11 +15,35 @@ import ExecutionContext.Implicits.global
 
 import com.supertaskhelper.security.UserLoginJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
-import com.supertaskhelper.service.TaskServiceActor
+import com.supertaskhelper.service._
 import com.supertaskhelper.service.TaskServiceActor.{ DeleteTask, CreateTask, FindTask }
 import com.supertaskhelper.search.SearchActor
-import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.domain.search.{ UserSearchParams, SearchParams }
 import com.supertaskhelper.security.{ LoginActor, UserLogin, UserAuthentication }
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.domain.search.UserSearchParamsJsonFormat._
+import com.supertaskhelper.domain.UserRegistrationJsonFormat._
+import com.supertaskhelper.domain.search.UserSearchParams
+import com.supertaskhelper.domain.search.UserSearchParams
+import spray.routing.RequestContext
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.domain.UserRegistration
+import com.supertaskhelper.domain.Status
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.domain.search.UserSearchParams
+import spray.routing.RequestContext
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.domain.UserRegistration
+import com.supertaskhelper.domain.Status
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.service.TaskServiceActor.FindTask
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,7 +61,7 @@ class RouteHttpServiceActor extends Actor with RouteHttpService with ActorLoggin
   }
 }
 
-trait RouteHttpService extends HttpService with UserAuthentication {
+trait RouteHttpService extends HttpService with UserAuthentication with EmailSentService {
 
   private var requestCount = 0
 
@@ -46,8 +70,12 @@ trait RouteHttpService extends HttpService with UserAuthentication {
     actorRefFactory.actorOf(Props(classOf[TaskServiceActor], ctx), s"IndexRequest-${requestCount}")
   }
 
-  //  def createLoginActor(ctx: RequestContext): ActorRef =
-  //    actorRefFactory.actorOf(Props(classOf[LoginActor], ctx), "login-actor")
+  def createEmailSentActor(ctx: RequestContext): ActorRef = {
+    actorRefFactory.actorOf(Props(classOf[EmailSentActor], ctx), "email-code-actor")
+  }
+
+  def createPerUserActor(ctx: RequestContext): ActorRef =
+    actorRefFactory.actorOf(Props(classOf[UserServiceActor], ctx), "user-actor")
 
   def createSearchActor(ctx: RequestContext): ActorRef = actorRefFactory.actorOf(Props(classOf[SearchActor], ctx), "search-actor")
 
@@ -58,9 +86,7 @@ trait RouteHttpService extends HttpService with UserAuthentication {
       } ~ path("login") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
-
             authenticate(authLogin) { user =>
-
               ctx => {
                 ctx.complete(user)
               }
@@ -68,6 +94,32 @@ trait RouteHttpService extends HttpService with UserAuthentication {
             }
           }
         }
+      } ~ path("users") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('id.as[String].?, 'email.as[String].?).as(UserSearchParams) { userSearchParams =>
+              ctx =>
+                val perRequestUserActor = createPerUserActor(ctx)
+                perRequestUserActor ! userSearchParams
+            }
+            parameters('codeEmail.as[String]) { code =>
+              ctx =>
+                //verify code
+                val emailActor = createEmailSentActor(ctx)
+                emailActor ! Code(code)
+
+            }
+          }
+        } ~
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              entity(as[UserRegistration]) { user =>
+                ctx => val perRequestSearchingActor = createPerUserActor(ctx)
+                perRequestSearchingActor ! CreateUser(user, "it")
+
+              }
+            }
+          }
       } ~ path("search") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
@@ -80,36 +132,35 @@ trait RouteHttpService extends HttpService with UserAuthentication {
             }
           }
         }
-      } ~
-        path("tasks") {
-          get {
+      } ~ path("tasks") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('id.as[String]) { id =>
+              ctx =>
+                val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! FindTask(id)
+            }
+          }
+        } ~
+          post {
             respondWithMediaType(MediaTypes.`application/json`) {
-              parameters('id.as[String]) { id =>
-                ctx =>
-                  val perRequestSearchingActor = createPerTaskActor(ctx)
-                  perRequestSearchingActor ! FindTask(id)
+              entity(as[Task]) { task =>
+                ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! CreateTask(task, "it")
+
               }
             }
           } ~
-            post {
-              respondWithMediaType(MediaTypes.`application/json`) {
-                entity(as[Task]) { task =>
-                  ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
-                  perRequestSearchingActor ! CreateTask(task, "it")
-
-                }
-              }
-            } ~
-            delete {
-              respondWithMediaType(MediaTypes.`application/json`) {
-                parameters('id.as[Int]) { id =>
-                  ctx =>
-                    val perRequestSearchingActor = createPerTaskActor(ctx)
-                    perRequestSearchingActor ! DeleteTask(id)
-                }
+          delete {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              parameters('id.as[Int]) { id =>
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! DeleteTask(id)
               }
             }
-        }
+          }
+      }
     } ~
       path("") {
         getFromResource("web/index.html")

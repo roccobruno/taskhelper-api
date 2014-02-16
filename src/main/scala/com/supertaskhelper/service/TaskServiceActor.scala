@@ -29,12 +29,7 @@ import com.supertaskhelper.common.jms.alerts.CreatedTaskAlert
  * Time: 22:49
  * To change this template use File | Settings | File Templates.
  */
-class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging with TaskService {
-
-  def createSendAlertActor(): ActorRef = {
-
-    context.actorOf(Props(classOf[SendingAlertsActor]))
-  }
+class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging with TaskService with AlertMessageService {
 
   def createTaskActor(): ActorRef = {
     context.actorOf(Props(classOf[TaskActor]))
@@ -62,7 +57,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     case CreateTask(task: Task, language: String) =>
       log.info("Received request to create the  task :{}", task)
       val response = createTask(task)
-      val sendAlertActor = createSendAlertActor()
+      val sendAlertActor = createSendAlertActor(context)
       sendAlertActor ! new CreatedTaskAlert(response.id, language)
       httpRequestContext.complete(response)
       context.stop(self)
