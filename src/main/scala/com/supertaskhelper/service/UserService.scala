@@ -63,6 +63,12 @@ trait UserService {
     getUser(collection, q)
   }
 
+  def removeToken(email: String) {
+
+    val collection = MongoFactory.getCollection("user_auth_token")
+    collection remove (MongoDBObject("email" -> email))
+  }
+
   /**
    * creates a token, saves it into mondodb and return
    * @param userName

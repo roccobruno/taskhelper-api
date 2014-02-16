@@ -58,6 +58,11 @@ trait UserAuthentication extends UserService {
       }
   }
 
+  def logout(email: String) = {
+    removeToken(email)
+
+  }
+
   private def doAuth(userName: String, token: String): Future[Authentication[UserToken]] = {
     Future {
       Either.cond(isValidToken(token, userName),
@@ -65,4 +70,9 @@ trait UserAuthentication extends UserService {
         AuthenticationFailedRejection(AuthenticationFailedRejection.CredentialsRejected, List(HttpHeaders.`WWW-Authenticate`(HttpChallenge("", "")))))
     }
   }
+}
+
+case class Logout(email: Option[String], token: Option[String]) {
+
+  require(email.isEmpty || token.isDefined, " either email or token must be supplied")
 }

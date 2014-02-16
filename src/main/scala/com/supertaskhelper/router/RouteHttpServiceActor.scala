@@ -6,7 +6,7 @@ import spray.routing._
 
 import spray.http.{ StatusCodes, MediaTypes }
 import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.{ UserRegistration, Task, Status }
+import com.supertaskhelper.domain._
 import akka.event.LoggingReceive
 
 import com.supertaskhelper.domain.StatusJsonFormat._
@@ -19,7 +19,7 @@ import com.supertaskhelper.service._
 import com.supertaskhelper.service.TaskServiceActor.{ DeleteTask, CreateTask, FindTask }
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.domain.search.{ UserSearchParams, SearchParams }
-import com.supertaskhelper.security.{ LoginActor, UserLogin, UserAuthentication }
+import com.supertaskhelper.security.{ Logout, LoginActor, UserLogin, UserAuthentication }
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.domain.search.UserSearchParamsJsonFormat._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
@@ -30,9 +30,6 @@ import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.Status
-import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
@@ -40,10 +37,19 @@ import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.domain.search.UserSearchParams
+import spray.routing.RequestContext
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.service.Code
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateTask
 import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.Status
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.domain.ResponseJsonFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -89,6 +95,18 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             authenticate(authLogin) { user =>
               ctx => {
                 ctx.complete(user)
+              }
+
+            }
+          }
+        }
+      } ~ path("logout") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('email.as[String]) { email =>
+              ctx => {
+                logout(email)
+                ctx.complete(Response("the user has been loged out", 200.toString))
               }
 
             }
