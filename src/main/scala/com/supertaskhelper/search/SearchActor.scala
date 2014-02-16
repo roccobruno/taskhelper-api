@@ -34,6 +34,7 @@ class SearchActor(httpRequestContext: RequestContext) extends Actor with ActorLo
 
     case s: SearchResultList => {
       httpRequestContext.complete(s)
+      context.stop(self)
     }
 
     case message @ _ =>

@@ -10,12 +10,16 @@ import com.supertaskhelper.domain.{ Task, Status }
 import akka.event.LoggingReceive
 
 import com.supertaskhelper.domain.StatusJsonFormat._
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 
+import com.supertaskhelper.security.UserLoginJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.service.TaskServiceActor
 import com.supertaskhelper.service.TaskServiceActor.{ DeleteTask, CreateTask, FindTask }
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.security.{ LoginActor, UserLogin, UserAuthentication }
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,7 +37,7 @@ class RouteHttpServiceActor extends Actor with RouteHttpService with ActorLoggin
   }
 }
 
-trait RouteHttpService extends HttpService {
+trait RouteHttpService extends HttpService with UserAuthentication {
 
   private var requestCount = 0
 
@@ -42,19 +46,37 @@ trait RouteHttpService extends HttpService {
     actorRefFactory.actorOf(Props(classOf[TaskServiceActor], ctx), s"IndexRequest-${requestCount}")
   }
 
+  //  def createLoginActor(ctx: RequestContext): ActorRef =
+  //    actorRefFactory.actorOf(Props(classOf[LoginActor], ctx), "login-actor")
+
   def createSearchActor(ctx: RequestContext): ActorRef = actorRefFactory.actorOf(Props(classOf[SearchActor], ctx), "search-actor")
 
   val route: Route =
     pathPrefix("api") {
       path("status") {
         complete(Status("API-STH is running"))
+      } ~ path("login") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+
+            authenticate(authLogin) { user =>
+
+              ctx => {
+                ctx.complete(user)
+              }
+
+            }
+          }
+        }
       } ~ path("search") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
-            parameters('terms.as[String]) { terms =>
-              ctx =>
-                val perRequestSearchingActor = createSearchActor(ctx)
-                perRequestSearchingActor ! SearchParams(terms, "task")
+            authenticate(authenticateUser) { user =>
+              parameters('terms.as[String]) { terms =>
+                ctx =>
+                  val perRequestSearchingActor = createSearchActor(ctx)
+                  perRequestSearchingActor ! SearchParams(terms, "task")
+              }
             }
           }
         }

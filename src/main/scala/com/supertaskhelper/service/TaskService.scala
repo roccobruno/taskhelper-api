@@ -74,7 +74,7 @@ trait TaskService {
       )
 
     ))
-    Response("Sussess", "1")
+    Response("Success", "1")
 
   }
 
