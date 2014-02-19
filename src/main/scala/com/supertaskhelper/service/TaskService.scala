@@ -21,17 +21,40 @@ import com.supertaskhelper.domain.ResponseJsonFormat._
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService {
+trait TaskService extends Service {
 
   val conn = MongoFactory.getConnection
 
-  def findTask(id: String) = {
-    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+  def findTask(params: TaskParams): Seq[Task] = {
+    val q = buildQuery(params)
+    //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
-    val result = collection findOne q
+    (collection find q)
+      .skip(params.page.getOrElse(1) - 1).sort(MongoDBObject("createdDate" -> -1))
+      .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x)).toSeq
+  }
 
-    val taskResult = result.get
+  private def buildQuery(params: TaskParams): DBObject = {
+    val builder = MongoDBObject.newBuilder
+    if (params.id.isDefined)
+      builder += "_id" -> new org.bson.types.ObjectId(params.id.get)
 
+    if (params.city.isDefined)
+      builder += "city" -> params.city.get
+
+    if (params.status.isDefined)
+      builder += "status" -> params.status.get
+
+    if (params.city.isDefined)
+      builder += "userId" -> params.tpId.get
+
+    if (params.city.isDefined)
+      builder += "taskHelperId" -> params.sthId.get
+
+    builder.result
+  }
+
+  private def buildTask(taskResult: DBObject): Task = {
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
     val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
@@ -39,17 +62,30 @@ trait TaskService {
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
     import _root_.scala.collection.JavaConverters._
     val task = Task(
-      title = taskResult.get("title").toString,
+      title = taskResult.getAs[String]("title").getOrElse(""),
       id = taskResult.getAs[ObjectId]("_id"),
-      description = taskResult.get("description").toString,
+      description = taskResult.getAs[String]("description").getOrElse(""),
       createdDate = taskResult.getAs[java.util.Date]("createdDate").get,
       address = address,
       endDate = taskResult.getAs[java.util.Date]("endDate").get,
-      time = taskResult.get("time").toString,
-      status = taskResult.get("status").toString,
-      userId = taskResult.get("userId").toString)
+      time = taskResult.getAs[String]("time").getOrElse(""),
+      status = taskResult.getAs[String]("status").getOrElse(""),
+      userId = taskResult.getAs[String]("userId").getOrElse(""))
 
     task //return the task object
+  }
+
+  def findTaskById(id: String) = {
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+
+    val collection = MongoFactory.getCollection("task")
+    val result = collection findOne q
+    if (result != None) {
+      val taskResult = result.get
+
+      buildTask(taskResult)
+    } else
+      null
   }
 
   def createTask(task: Task) = {

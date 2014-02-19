@@ -23,7 +23,7 @@ import com.typesafe.config.ConfigFactory
  * To change this template use File | Settings | File Templates.
  */
 
-trait UserService {
+trait UserService extends Service {
 
   /**
    * finds a user by username

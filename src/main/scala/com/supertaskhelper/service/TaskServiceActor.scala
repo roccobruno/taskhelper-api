@@ -4,8 +4,7 @@ import akka.actor._
 import com.supertaskhelper.util.ActorFactory
 import akka.event.LoggingReceive
 import com.supertaskhelper.service.TaskServiceActor.{ DeleteTask, CreateTask, FindTask }
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Response
+import com.supertaskhelper.domain.{ Tasks, TaskParams, Task, Response }
 import scala.concurrent.duration._
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
 import com.supertaskhelper.service.TaskServiceActor.FindTask
@@ -17,10 +16,11 @@ import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
 import spray.routing.RequestContext
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.amqp.SendingAlertsActor
 import com.supertaskhelper.common.jms.alerts.CreatedTaskAlert
+import spray.http.StatusCodes
+import com.supertaskhelper.domain.TasksJsonFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -46,11 +46,24 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
-    case FindTask(id: String) => {
-      log.info("Received request to search task with id:{}", id)
-      val taskActor = createTaskActor()
-      taskActor ! FindTask(id)
+    case t: Tasks => {
+      t.tasks.foreach(x => println(x))
+
+      httpRequestContext.complete(t)
+      context.stop(self)
     }
+
+    case ts: TaskNotFound => {
+      httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Not Found")
+      context.stop(self)
+    }
+
+    case FindTask(params: TaskParams) => {
+      log.info("Received request to search task with params:{}", params)
+      val actor = createTaskActor()
+      actor ! params
+    }
+
     case DeleteTask(id: Int) =>
       log.info("Received request to delete task with id:{}", id)
       context.stop(self)
@@ -64,14 +77,14 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     case ReceiveTimeout =>
       context.stop(self)
     case message @ _ =>
-      log.warning(s"Unknown message received by SearchingTaskActor: ${message}")
+      log.warning(s"Unknown message received by TaskServiceActor: ${message}")
 
   }
 }
 
 object TaskServiceActor {
 
-  case class FindTask(id: String)
+  case class FindTask(params: TaskParams)
   case class DeleteTask(id: Int)
   case class CreateTask(task: Task, language: String)
 

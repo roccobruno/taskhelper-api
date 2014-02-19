@@ -17,6 +17,7 @@ import scala.concurrent.duration._
 import com.supertaskhelper.service.Code
 import com.supertaskhelper.domain.Response
 import spray.routing.RequestContext
+import spray.http.StatusCodes
 
 /**
  * Created with IntelliJ IDEA.
@@ -79,7 +80,7 @@ class EmailSentActor(ctx: RequestContext) extends Actor with ActorLogging with E
       if (res._1)
         ctx.complete(Response("code verified", 200.toString))
       else
-        ctx.complete(Response("code not valid", res._2.toString))
+        ctx.complete(StatusCodes.BadRequest, "Code not valid")
 
       context.stop(self)
     }

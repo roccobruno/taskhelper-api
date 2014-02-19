@@ -5,7 +5,7 @@ import java.util.Locale
 import com.supertaskhelper.Settings
 import com.supertaskhelper.search.TaskAggregator.{ NotEnriched, Enriched, Enrichable }
 import akka.event.LoggingReceive
-import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.{ TaskParams, Task }
 import com.supertaskhelper.service.TaskNotFound
 import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
 import com.supertaskhelper.service.TaskServiceActor.FindTask
@@ -51,7 +51,7 @@ class TaskAggregator(replyTo: ActorRef, taskActorFinder: ActorRef)
       result = docs.map(doc => NotEnriched(new ObjectId(doc.id)))
 
       // Let's fire a request to the PS API for each task
-      docs.foreach(doc => taskActorFinder ! FindTask(doc.id))
+      docs.foreach(doc => taskActorFinder ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None)))
 
     case p: Task =>
       // We have received a full task back from the TaskFinder

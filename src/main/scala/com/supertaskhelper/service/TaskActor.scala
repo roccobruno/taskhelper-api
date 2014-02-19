@@ -3,6 +3,8 @@ package com.supertaskhelper.service
 import akka.actor.{ ActorLogging, Actor }
 import akka.event.LoggingReceive
 import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.util.ActorFactory
+import com.supertaskhelper.domain.{ Tasks, TaskParams }
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,13 +13,13 @@ import com.supertaskhelper.service.TaskServiceActor.FindTask
  * Time: 17:40
  * To change this template use File | Settings | File Templates.
  */
-class TaskActor extends Actor with ActorLogging with TaskService {
+class TaskActor extends Actor with ActorLogging with ActorFactory with TaskService {
   def receive = LoggingReceive {
 
-    case FindTask(id: String) => {
+    case params: TaskParams => {
 
-      val task = findTask(id)
-      sender ! (if (task != null) task else TaskNotFound(id))
+      val task = findTask(params)
+      sender ! (if (task.size > 0) Tasks(task) else TaskNotFound(""))
     }
 
     case message @ _ =>

@@ -50,6 +50,7 @@ import com.supertaskhelper.domain.Status
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.TaskParamsFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -106,9 +107,20 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             parameters('email.as[String]) { email =>
               ctx => {
                 logout(email)
-                ctx.complete(Response("the user has been loged out", 200.toString))
+                ctx.complete(Response("the user has been logged out", 200.toString))
               }
 
+            }
+          }
+        }
+      } ~ path("verifycode") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('codeEmail.as[String]) { code =>
+              ctx =>
+                //verify code
+                val emailActor = createEmailSentActor(ctx)
+                emailActor ! Code(code)
             }
           }
         }
@@ -120,13 +132,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
                 val perRequestUserActor = createPerUserActor(ctx)
                 perRequestUserActor ! userSearchParams
             }
-            parameters('codeEmail.as[String]) { code =>
-              ctx =>
-                //verify code
-                val emailActor = createEmailSentActor(ctx)
-                emailActor ! Code(code)
 
-            }
           }
         } ~
           post {
@@ -153,11 +159,17 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
       } ~ path("tasks") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
-            parameters('id.as[String]) { id =>
-              ctx =>
-                val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! FindTask(id)
-            }
+            parameters('id.as[String].?,
+              'status.as[String].?,
+              'tpId.as[String].?, 'sthId.as[String].?,
+              'city.as[String].?,
+              'sort.as[String].?,
+              'sizePage.as[Int].?,
+              'page.as[Int].?).as(TaskParams) { params =>
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! FindTask(params)
+              }
           }
         } ~
           post {

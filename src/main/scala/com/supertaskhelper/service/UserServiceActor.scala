@@ -17,6 +17,8 @@ import spray.httpx.SprayJsonSupport._
 import com.supertaskhelper.domain.UserJsonFormat._
 import com.supertaskhelper.domain.{ Response, LocaleLanguage, UserRegistration }
 import com.supertaskhelper.common.jms.alerts.ConfirmationEmailAlert
+import com.supertaskhelper.common.enums.SOURCE
+import spray.http.StatusCodes
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,7 +35,7 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
 
       saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
       val alertActor = createSendAlertActor(context)
-      alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language)
+      alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language, SOURCE.valueOf(user.source.get))
       ctx.complete(Response("Resource Added", 200.toString))
       context.stop(self)
 
@@ -44,7 +46,7 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
       if (res._1)
         ctx.complete(res._2)
       else
-        ctx.complete(Response("Resource not found", 404.toString))
+        ctx.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Not Found")
       context.stop(self)
     }
 

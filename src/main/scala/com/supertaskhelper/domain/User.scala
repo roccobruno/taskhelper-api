@@ -5,6 +5,7 @@ import java.util.{ Date, Locale }
 import java.text.SimpleDateFormat
 import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.User
+import com.supertaskhelper.common.enums.SOURCE
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,13 +21,14 @@ object UserJsonFormat extends DefaultJsonProtocol {
 }
 
 case class UserRegistration(userName: String, password: String, confirmPassword: String, email: String,
-    language: Option[Locale]) {
+    language: Option[Locale], source: Option[String]) {
 
   require(!userName.isEmpty, "username must not be empty")
   require(!email.isEmpty, "email must not be empty")
   require(!password.isEmpty, "password must not be empty")
   require(!confirmPassword.isEmpty, "confirmPassword must not be empty")
   require(password == confirmPassword, "password and confirmpassword must be equals")
+  require(source.isEmpty || SOURCE.valueOf(source.get) != null, "source value not recognized")
 
 }
 
@@ -51,5 +53,5 @@ object UserRegistrationJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Locale expected")
     }
   }
-  implicit val userRegistrationFormat = jsonFormat5(UserRegistration)
+  implicit val userRegistrationFormat = jsonFormat6(UserRegistration)
 }

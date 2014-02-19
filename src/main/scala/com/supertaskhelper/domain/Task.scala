@@ -15,6 +15,7 @@ import org.bson.types.ObjectId
  */
 
 case class Location(longitude: String, latitude: String)
+
 case class Address(address: Option[String], city: Option[String], country: String, location: Location, postcode: String, regione: Option[String])
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String)
 
@@ -53,4 +54,17 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   }
 
   implicit val taskFormat = jsonFormat9(Task)
+}
+
+case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String], sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int]) extends Pagination(page, sizePage)
+
+object TaskParamsFormat extends DefaultJsonProtocol {
+  implicit val taskParamsFormat = jsonFormat8(TaskParams)
+}
+
+case class Tasks(tasks: Seq[Task])
+object TasksJsonFormat extends DefaultJsonProtocol {
+  import com.supertaskhelper.domain.TaskJsonFormat._
+  implicit val taskFormat = jsonFormat9(Task)
+  implicit val tasksFormat = jsonFormat1(Tasks)
 }
