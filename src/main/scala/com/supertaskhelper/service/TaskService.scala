@@ -47,10 +47,10 @@ trait TaskService extends Service {
     if (params.status.isDefined)
       builder += "status" -> params.status.get
 
-    if (params.city.isDefined)
+    if (params.tpId.isDefined)
       builder += "userId" -> params.tpId.get
 
-    if (params.city.isDefined)
+    if (params.sthId.isDefined)
       builder += "taskHelperId" -> params.sthId.get
 
     builder.result
