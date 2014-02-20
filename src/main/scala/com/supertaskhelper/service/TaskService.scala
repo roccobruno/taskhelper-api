@@ -13,6 +13,7 @@ import com.supertaskhelper.domain.Location
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.ResponseJsonFormat._
+import java.util.Date
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,11 +27,12 @@ trait TaskService extends Service {
   val conn = MongoFactory.getConnection
 
   def findTask(params: TaskParams): Seq[Task] = {
+    println("Build Task with params:{}", params)
     val q = buildQuery(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
-    (collection find q)
-      .skip(params.page.getOrElse(1) - 1).sort(MongoDBObject("createdDate" -> -1))
+    (collection find q).sort(MongoDBObject("createdDate" -> -1))
+      .skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
       .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x)).toSeq
   }
 
@@ -40,7 +42,7 @@ trait TaskService extends Service {
       builder += "_id" -> new org.bson.types.ObjectId(params.id.get)
 
     if (params.city.isDefined)
-      builder += "city" -> params.city.get
+      builder += "address.city" -> params.city.get
 
     if (params.status.isDefined)
       builder += "status" -> params.status.get
@@ -55,6 +57,7 @@ trait TaskService extends Service {
   }
 
   private def buildTask(taskResult: DBObject): Task = {
+
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
     val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
@@ -67,7 +70,7 @@ trait TaskService extends Service {
       description = taskResult.getAs[String]("description").getOrElse(""),
       createdDate = taskResult.getAs[java.util.Date]("createdDate").get,
       address = address,
-      endDate = taskResult.getAs[java.util.Date]("endDate").get,
+      endDate = taskResult.getAs[java.util.Date]("endDate").getOrElse(new Date()),
       time = taskResult.getAs[String]("time").getOrElse(""),
       status = taskResult.getAs[String]("status").getOrElse(""),
       userId = taskResult.getAs[String]("userId").getOrElse(""))

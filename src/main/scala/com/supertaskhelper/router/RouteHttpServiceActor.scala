@@ -162,10 +162,10 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             parameters('id.as[String].?,
               'status.as[String].?,
               'tpId.as[String].?, 'sthId.as[String].?,
+              'sort.as[String].?,
               'city.as[String].?,
               'sort.as[String].?,
-              'sizePage.as[Int].?,
-              'page.as[Int].?).as(TaskParams) { params =>
+              'page.as[Int].?, 'sizePage.as[Int].?).as(TaskParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! FindTask(params)
