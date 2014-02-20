@@ -159,13 +159,15 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
       } ~ path("tasks") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
-            parameters('id.as[String].?,
+            parameters(
+              'id.as[String].?,
               'status.as[String].?,
-              'tpId.as[String].?, 'sthId.as[String].?,
+              'tpId.as[String].?,
+              'sthId.as[String].?,
               'sort.as[String].?,
               'city.as[String].?,
-              'sort.as[String].?,
-              'page.as[Int].?, 'sizePage.as[Int].?).as(TaskParams) { params =>
+              'page.as[Int].?,
+              'sizePage.as[Int].?).as(TaskParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! FindTask(params)
