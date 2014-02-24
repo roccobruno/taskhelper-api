@@ -51,6 +51,8 @@ import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain.TaskParamsFormat._
+import com.supertaskhelper.domain.MessagesJsonFormat._
+import com.supertaskhelper.domain.ConversationsJsonFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -79,6 +81,10 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
 
   def createEmailSentActor(ctx: RequestContext): ActorRef = {
     actorRefFactory.actorOf(Props(classOf[EmailSentActor], ctx), "email-code-actor")
+  }
+
+  def createConversationMessageActor(ctx: RequestContext): ActorRef = {
+    actorRefFactory.actorOf(Props(classOf[ConversationMessageActor], ctx), "conversation-message-code-actor")
   }
 
   def createPerUserActor(ctx: RequestContext): ActorRef =
@@ -192,7 +198,23 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
             }
           }
+      } ~ path("conversation") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'id.as[String].?,
+              'page.as[Int].?,
+              'pageSize.as[Int].?,
+              'userId.as[String].?).as(ConversationParams) { params =>
+                ctx =>
+                  val perRequestSearchingActor = createConversationMessageActor(ctx)
+                  perRequestSearchingActor ! params
+              }
+          }
+
+        }
       }
+
     } ~
       path("") {
         getFromResource("web/index.html")

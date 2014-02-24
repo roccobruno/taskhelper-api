@@ -2,7 +2,7 @@ package com.supertaskhelper
 
 import spray.servlet.WebBoot
 import akka.actor.{ Props, ActorSystem }
-import com.netaporter.TopLevel
+
 import com.supertaskhelper.router.RouteHttpServiceActor
 
 /**
