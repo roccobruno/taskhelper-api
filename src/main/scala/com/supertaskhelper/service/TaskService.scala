@@ -60,6 +60,7 @@ trait TaskService extends Service {
 
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
+    val bidss: Seq[Bid] = taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject])).toSeq
     val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
@@ -73,9 +74,25 @@ trait TaskService extends Service {
       endDate = taskResult.getAs[java.util.Date]("endDate").getOrElse(new Date()),
       time = taskResult.getAs[String]("time").getOrElse(""),
       status = taskResult.getAs[String]("status").getOrElse(""),
-      userId = taskResult.getAs[String]("userId").getOrElse(""))
+      userId = taskResult.getAs[String]("userId").getOrElse(""),
+      bids = Option(bidss))
 
     task //return the task object
+  }
+
+  private def buildBid(bid: DBObject): Bid = {
+
+    Bid(
+
+      createdDate = bid.getAs[Date]("created").getOrElse(new Date()),
+      offeredValue = bid.getAs[String]("offeredValue").getOrElse("0"),
+      incrementedValue = bid.getAs[String]("incrementedValue").getOrElse("0"),
+      comment = bid.getAs[String]("String").getOrElse(""),
+      sthId = bid.getAs[String]("taskhelperId").getOrElse(""),
+      sth = bid.getAs[String]("taskHelperUserName").getOrElse("")
+
+    )
+
   }
 
   def findTaskById(id: String) = {
