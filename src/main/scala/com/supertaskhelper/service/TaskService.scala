@@ -14,6 +14,7 @@ import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import java.util.Date
+import com.supertaskhelper.common.enums.COMMENT_STATUS
 
 /**
  * Created with IntelliJ IDEA.
@@ -60,7 +61,8 @@ trait TaskService extends Service {
 
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
-    val bidss: Seq[Bid] = taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject])).toSeq
+    val bidss: Seq[Bid] = taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq
+    val comms: Seq[Comment] = taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq
     val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
@@ -75,24 +77,93 @@ trait TaskService extends Service {
       time = taskResult.getAs[String]("time").getOrElse(""),
       status = taskResult.getAs[String]("status").getOrElse(""),
       userId = taskResult.getAs[String]("userId").getOrElse(""),
-      bids = Option(bidss))
+      bids = Option(bidss),
+      comments = Option(comms))
 
     task //return the task object
   }
 
-  private def buildBid(bid: DBObject): Bid = {
+  private def buildBid(bid: DBObject, taskId: String): Bid = {
 
     Bid(
 
       createdDate = bid.getAs[Date]("created").getOrElse(new Date()),
       offeredValue = bid.getAs[String]("offeredValue").getOrElse("0"),
       incrementedValue = bid.getAs[String]("incrementedValue").getOrElse("0"),
-      comment = bid.getAs[String]("String").getOrElse(""),
-      sthId = bid.getAs[String]("taskhelperId").getOrElse(""),
-      sth = bid.getAs[String]("taskHelperUserName").getOrElse("")
+      comment = bid.getAs[String]("comment").getOrElse("NOT FOUND"),
+      sthId = bid.getAs[String]("taskhelperId").getOrElse("NOT FOUND"),
+      sth = bid.getAs[String]("taskHelperUserName").getOrElse("NOT FOUND"),
+      taskId = Option(taskId),
+      id = bid.getAs[String]("_id"),
+      status = bid.getAs[String]("status")
 
     )
 
+  }
+
+  private def buildComment(comment: DBObject, taskId: String): Comment = {
+
+    Comment(
+
+      dateCreated = comment.getAs[Date]("dateCreated").getOrElse(new Date()),
+      userId = comment.getAs[String]("userId").getOrElse("0"),
+      userName = comment.getAs[String]("username").getOrElse("0"),
+      comment = comment.getAs[String]("comment").getOrElse("NOT FOUND"),
+      taskId = taskId,
+      id = comment.getAs[String]("id"),
+      status = comment.getAs[String]("status")
+
+    )
+
+  }
+
+  def createBid(bid: Bid, bidId: String) = {
+    val collection = MongoFactory.getCollection("task")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(bid.taskId.get))
+
+    collection update (q, $push(("bids", buildBidDbObject(bid, bidId))))
+    Response("Success", "1")
+  }
+
+  def buildBidDbObject(bid: Bid, id: String): MongoDBObject = {
+    MongoDBObject(
+      "created" -> new Date(),
+      "offeredValue" -> bid.offeredValue,
+      "incrementedValue" -> bid.incrementedValue,
+      "comment" -> bid.comment,
+      "taskhelperId" -> bid.sthId,
+      "taskHelperUserName" -> bid.sth,
+      "taskId" -> bid.taskId,
+      "_id" -> id
+    )
+  }
+
+  def findBids(taskId: String) = {
+    findTaskById(taskId).bids.get.sortWith(_.createdDate after _.createdDate)
+  }
+
+  def createComment(comment: Comment, commentId: String) = {
+    val collection = MongoFactory.getCollection("task")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(comment.taskId))
+
+    collection update (q, $push(("comments", buildCommentDbObject(comment, commentId))))
+    Response("Success", "1")
+  }
+
+  def buildCommentDbObject(comment: Comment, id: String): MongoDBObject = {
+    MongoDBObject(
+      "dateCreated" -> new Date(),
+      "userId" -> comment.userId,
+      "username" -> comment.userName,
+      "comment" -> comment.comment,
+      "taskId" -> comment.taskId,
+      "id" -> id,
+      "status" -> COMMENT_STATUS.VALID.toString()
+    )
+  }
+
+  def findCommentss(taskId: String) = {
+    findTaskById(taskId).comments.get.sortWith(_.dateCreated after _.dateCreated)
   }
 
   def findTaskById(id: String) = {

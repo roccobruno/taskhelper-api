@@ -36,6 +36,7 @@ class SendingAlertsActor() extends Actor with ActorLogging {
       RabbitMQConnection.getRabbitTemplate().convertAndSend("alerts", alert)
       context.stop(self)
     }
-    case _ => {}
+    case message @ _ =>
+      log.warning(s"Unknown message received by SendingAlertsActor: ${message}")
   }
 }

@@ -15,10 +15,68 @@ import org.bson.types.ObjectId
  */
 
 case class Location(longitude: String, latitude: String)
-case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String, sthId: String, sth: String, comment: String)
+case class Bids(bids: Seq[Bid])
+case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String, sthId: String,
+    sth: String, comment: String, taskId: Option[String], id: Option[String], status: Option[String]) {
+
+  require(!incrementedValue.isEmpty, "incremented value cannot be empty")
+  require(!offeredValue.isEmpty, "offeredValue  cannot be empty")
+  require(createdDate != null, "createdDate  cannot be empty")
+  require(!sthId.isEmpty, "sthId  cannot be empty")
+  require(!taskId.isEmpty, "taskId  cannot be empty")
+}
 case class Address(address: Option[String], city: Option[String], country: String, location: Location, postcode: String, regione: Option[String])
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String,
-  bids: Option[Seq[Bid]])
+  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]])
+
+case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String]) {
+  require(!comment.isEmpty, "comment  cannot be empty")
+  require(dateCreated != null, "createdDate  cannot be empty")
+  require(!userId.isEmpty, "userId  cannot be empty")
+  require(!taskId.isEmpty, "taskId  cannot be empty")
+  require(!userName.isEmpty, "userName  cannot be empty")
+}
+
+case class Comments(comments: Seq[Comment])
+
+object CommentJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val commentFormat = jsonFormat7(Comment)
+}
+
+object CommentsJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val commentFormat = jsonFormat7(Comment)
+  implicit val commentsFormat = jsonFormat1(Comments)
+}
 
 object BidJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
@@ -36,7 +94,27 @@ object BidJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val bidFormat = jsonFormat6(Bid)
+  implicit val bidFormat = jsonFormat9(Bid)
+}
+
+object BidsJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val bidFormat = jsonFormat9(Bid)
+  implicit val bidsFormat = jsonFormat1(Bids)
 }
 
 object TaskJsonFormat extends DefaultJsonProtocol {
@@ -72,8 +150,9 @@ object TaskJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("ObjectId expected")
     }
   }
-  implicit val bidFormat = jsonFormat6(Bid)
-  implicit val taskFormat = jsonFormat10(Task)
+  implicit val bidFormat = jsonFormat9(Bid)
+  implicit val commentFormat = jsonFormat7(Comment)
+  implicit val taskFormat = jsonFormat11(Task)
 }
 
 case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String], sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int]) extends Pagination(page, sizePage)
@@ -85,6 +164,6 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.TaskJsonFormat._
-  implicit val taskFormat = jsonFormat10(Task)
+  implicit val taskFormat = jsonFormat11(Task)
   implicit val tasksFormat = jsonFormat1(Tasks)
 }

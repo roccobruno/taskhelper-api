@@ -16,7 +16,7 @@ import ExecutionContext.Implicits.global
 import com.supertaskhelper.security.UserLoginJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.service._
-import com.supertaskhelper.service.TaskServiceActor.{ DeleteTask, CreateTask, FindTask }
+import com.supertaskhelper.service.TaskServiceActor._
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.domain.search.{ UserSearchParams, SearchParams }
 import com.supertaskhelper.security.{ Logout, LoginActor, UserLogin, UserAuthentication }
@@ -28,19 +28,29 @@ import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.service.Code
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.domain.UserRegistration
+import com.supertaskhelper.domain.Status
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.TaskParamsFormat._
+import com.supertaskhelper.domain.MessagesJsonFormat._
+import com.supertaskhelper.domain.ConversationsJsonFormat._
+import com.supertaskhelper.domain.ConversationParams
+import com.supertaskhelper.domain.Response
+import com.supertaskhelper.domain.search.UserSearchParams
+import spray.routing.RequestContext
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.domain.Bid
 import com.supertaskhelper.service.Code
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
@@ -49,10 +59,6 @@ import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.Status
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import com.supertaskhelper.domain.TaskParamsFormat._
-import com.supertaskhelper.domain.MessagesJsonFormat._
-import com.supertaskhelper.domain.ConversationsJsonFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -162,6 +168,46 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             }
           }
         }
+      } ~ path("tasks" / "bids") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'taskId.as[String]) { taskId =>
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! FindBids(taskId)
+              }
+          }
+        } ~
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              entity(as[Bid]) { bid =>
+                ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! CreateBid(bid, "it")
+
+              }
+            }
+          }
+      } ~ path("tasks" / "comments") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'taskId.as[String]) { taskId =>
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! FindComments(taskId)
+              }
+          }
+        } ~
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              entity(as[Comment]) { comment =>
+                ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! CreateComment(comment, "it")
+
+              }
+            }
+          }
       } ~ path("tasks") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
