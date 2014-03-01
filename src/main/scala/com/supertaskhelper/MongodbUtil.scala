@@ -33,11 +33,11 @@ object MongoFactory {
 
   val uri = if (mongolabUri != null && !mongolabUri.isEmpty) MongoClientURI(mongolabUri) else MongoClientURI("mongodb://localhost:27017")
 
-  val server = new ServerAddress("ds057528.mongolab.com", 57528)
-  //  val server = new ServerAddress(SERVER, PORT)
-  val credential = MongoCredential("taskhelper", "tuttofare", "taskhelper".toCharArray)
-  val mongoClient = MongoClient(server, List(credential))
-  //  val mongoClient = MongoClient(server)
+  //  val server = new ServerAddress("ds057528.mongolab.com", 57528)
+  val server = new ServerAddress(SERVER, PORT)
+  //  val credential = MongoCredential("taskhelper", "tuttofare", "taskhelper".toCharArray)
+  //  val mongoClient = MongoClient(server, List(credential))
+  val mongoClient = MongoClient(server)
 
   def getDB = if (mongodbName != null && !mongodbName.isEmpty) mongoClient(mongodbName) else mongoClient("tuttofare")
 

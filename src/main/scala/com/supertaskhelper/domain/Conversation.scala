@@ -16,9 +16,16 @@ import com.supertaskhelper.domain.Message
  * Time: 19:52
  * To change this template use File | Settings | File Templates.
  */
-case class Conversation(id: String, lastUpdate: Option[Date], users: Option[List[String]], topic: Option[String])
-case class Message(id: String, conversationId: Option[String], subject: Option[String], message: Option[String],
-  fromEmail: Option[String], fromUserId: Option[String], createdDate: Option[Date])
+case class Conversation(id: String, lastUpdate: Option[Date], users: Option[Seq[String]], topic: Option[String])
+case class Message(id: Option[String], conversationId: Option[String], subject: Option[String], message: Option[String],
+    fromEmail: Option[String], fromUserId: Option[String], fromUserName: Option[String], createdDate: Option[Date], toEmail: Option[String],
+    toUserId: Option[String], toUserName: Option[String], status: Option[String]) {
+
+  require(!message.isEmpty, "message cannot be empty")
+  require(!subject.isEmpty, "subject cannot be empty")
+  require(fromEmail.isDefined || fromUserId.isDefined, "either email or userId of the sender must be sent")
+  require(toEmail.isDefined || toUserId.isDefined, "either email or userId of the receiver must be sent")
+}
 
 object ConversationJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
@@ -55,7 +62,7 @@ object MessageJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val messageFormat = jsonFormat7(Message)
+  implicit val messageFormat = jsonFormat12(Message)
 }
 
 case class ConversationParams(id: Option[String], page: Option[Int], pageSize: Option[Int], userId: Option[String]) {
@@ -77,6 +84,6 @@ object ConversationsJsonFormat extends DefaultJsonProtocol {
 case class Messages(messages: Seq[Message])
 object MessagesJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.MessageJsonFormat._
-  implicit val messageFormat = jsonFormat7(Message)
+  implicit val messageFormat = jsonFormat12(Message)
   implicit val messagesFormat = jsonFormat1(Messages)
 }

@@ -181,8 +181,7 @@ trait TaskService extends Service {
 
   def createTask(task: Task) = {
     val collection = MongoFactory.getCollection("task")
-
-    collection.save(MongoDBObject(
+    val doc = MongoDBObject(
 
       "createdDate" -> task.createdDate,
       "description" -> task.description,
@@ -191,11 +190,10 @@ trait TaskService extends Service {
         "address" -> task.address.address,
         "location" -> MongoDBObject(
           "latitude" -> task.address.location.latitude
-        )
-      )
+        )))
+    collection.save(doc)
 
-    ))
-    Response("Success", "1")
+    Response("Success", doc.getAs[org.bson.types.ObjectId]("_id").get.toString)
 
   }
 

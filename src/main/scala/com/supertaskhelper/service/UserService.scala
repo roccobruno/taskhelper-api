@@ -151,6 +151,10 @@ trait UserService extends Service {
     collection update (query, $set("activeFrom" -> new Date()))
   }
 
+  def getUserName(userId: String, email: String) {
+
+  }
+
 }
 
 case class UserToken(username: String, token: String, activeFrom: Date)
