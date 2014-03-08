@@ -59,10 +59,10 @@ trait TaskService extends Service {
 
   private def buildTask(taskResult: DBObject, distance: Option[String]): Task = {
 
-    val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
-    val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
     val bidss: Seq[Bid] = taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
     val comms: Seq[Comment] = taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
+    val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
+    val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
     val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))

@@ -1,7 +1,7 @@
 package com.supertaskhelper.service
 
 import com.supertaskhelper.{ Settings, MongoFactory }
-import com.supertaskhelper.domain.{ UserRegistration, User }
+import com.supertaskhelper.domain.{ Address, Location, UserRegistration, User }
 import com.mongodb.casbah.Imports._
 import java.util.{ Locale, GregorianCalendar, Calendar, Date }
 import akka.actor.{ Actor, ActorLogging }
@@ -14,6 +14,8 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.supertaskhelper.common.enums.ACCOUNT_STATUS
 import java.util
 import com.typesafe.config.ConfigFactory
+import com.mongodb.BasicDBObject
+import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 
 /**
  * Created with IntelliJ IDEA.
@@ -43,15 +45,30 @@ trait UserService extends Service {
     if (res != None) {
 
       val userResult = res.get
+      val addobj = userResult.get("address").asInstanceOf[BasicDBObject]
+      val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
+      val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
+
+      val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
 
       user = User(
         userName = userResult.getAs[String]("username").get,
         isSTH = userResult.getAs[Boolean]("STH").getOrElse(false),
         email = userResult.getAs[String]("email").get,
-        password = userResult.getAs[String]("password").get,
+        password = "NOT_VISIBLE",
         id = userResult.getAs[ObjectId]("_id").get.toString,
         imgUrl = Option("loadphoto/USER_" + userResult.getAs[ObjectId]("_id").get.toString),
-        distance = None
+        distance = None,
+        address = address,
+        bio = userResult.getAs[String]("bio"),
+        fbBudget = userResult.getAs[Boolean]("fbBudget"),
+        twitterBudget = userResult.getAs[Boolean]("twitterBudget"),
+        linkedInBudget = userResult.getAs[Boolean]("linkedInBudget"),
+        securityDocVerified = userResult.getAs[Boolean]("securityDocVerified"),
+        webcamVerified = userResult.getAs[Boolean]("webcamVerified"),
+        emailVerified = userResult.getAs[Boolean]("emailVerified"),
+        idDocVerified = userResult.getAs[Boolean]("idDocVerified")
+
       )
       (true, user)
     } else

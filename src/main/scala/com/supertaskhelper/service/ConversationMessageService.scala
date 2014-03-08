@@ -113,15 +113,33 @@ trait ConversationMessageService extends UserService {
   }
 
   private def buildDBBObjectMessage(message: Message, conversationId: String): MongoDBObject = {
+
+    val userDbObject: (Boolean, User) =
+      if (!message.fromEmail.isDefined)
+        findUserById(message.fromUserId.get)
+      else findUserByEmail(message.fromEmail.get)
+
+    if (!userDbObject._1) {
+      throw new IllegalArgumentException("no sender user found for data :" + message)
+    }
+
+    val userToDbObject: (Boolean, User) =
+      if (!message.fromEmail.isDefined)
+        findUserById(message.toUserId.get)
+      else findUserByEmail(message.toEmail.get)
+
+    if (!userToDbObject._1) {
+      throw new IllegalArgumentException("no receiver user found for data :" + message)
+    }
+
     MongoDBObject(
       "conversationId" -> conversationId,
-      "fromName" -> (if (message.fromUserName.isDefined) message.fromUserName else getUserName(message.fromUserId.getOrElse(""),
-        message.fromEmail.getOrElse(""))),
-      "from" -> message.fromEmail,
-      "fromUserId" -> message.fromUserId,
-      "to" -> message.toUserName,
-      "hiddenEmail" -> message.toEmail,
-      "toUserId" -> message.toUserId,
+      "fromName" -> userDbObject._2.userName,
+      "from" -> userDbObject._2.email,
+      "fromUserId" -> userDbObject._2.id,
+      "to" -> userToDbObject._2.userName,
+      "hiddenEmail" -> userToDbObject._2.email,
+      "toUserId" -> userToDbObject._2.id,
       "message" -> message.message,
       "subject" -> message.subject,
       "state" -> MESSAGE_STATUS.UNREAD.toString,

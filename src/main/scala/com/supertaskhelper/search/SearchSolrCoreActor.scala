@@ -85,7 +85,7 @@ trait SearchSolrCoreActor
     case s: SearchParams =>
 
       val uri = Uri(settings.searchSolr.nap + "/select") withQuery (buildQuery(s))
-
+      log.info("solr request:{}", uri)
       val f = pipeline(Get(uri))
         .map(_.response)
 
@@ -105,7 +105,6 @@ trait SearchSolrCoreActor
     if (s.sort.getOrElse("createdDate desc") contains ("position")) {
       Map(
         "q" -> s"$tesrmsWitType",
-
         "sort" -> "geodist() desc",
         "q.op" -> "AND",
         "wt" -> "json",
@@ -123,7 +122,7 @@ trait SearchSolrCoreActor
         "sort" -> s.sort.getOrElse("score desc"),
         "q.op" -> "AND",
         "wt" -> "json",
-        "start" -> s.page.getOrElse(1).toString,
+        "start" -> s.page.getOrElse(0).toString,
         "rows" -> s.sizePage.getOrElse(10).toString,
         "defType" -> "edismax"
 

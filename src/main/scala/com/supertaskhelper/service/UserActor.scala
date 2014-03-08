@@ -37,7 +37,16 @@ class UserActor extends Actor with ActorLogging with UserService {
       password = u.password,
       id = u.id,
       imgUrl = u.imgUrl,
-      distance = dist
+      distance = dist,
+      address = u.address,
+      bio = u.bio,
+      fbBudget = u.fbBudget,
+      twitterBudget = u.twitterBudget,
+      linkedInBudget = u.linkedInBudget,
+      securityDocVerified = u.securityDocVerified,
+      webcamVerified = u.webcamVerified,
+      emailVerified = u.emailVerified,
+      idDocVerified = u.idDocVerified
 
     )
 
