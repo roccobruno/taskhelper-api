@@ -1,6 +1,6 @@
 package com.supertaskhelper
 
-import com.typesafe.config.Config
+import com.typesafe.config.{ ConfigFactory, Config }
 import akka.actor.{ ExtendedActorSystem, ExtensionIdProvider, ExtensionId, Extension }
 
 import scala.concurrent.duration._
@@ -25,6 +25,9 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
 
   override def createExtension(system: ExtendedActorSystem) =
     new Settings(system.settings.config)
+
+  def solr_username = ConfigFactory.load().getString("api-sth.solr.username")
+  def solr_password = ConfigFactory.load().getString("api-sth.solr.password")
 }
 
 class SearchSolrSettings(config: String) {

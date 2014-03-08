@@ -1,7 +1,16 @@
 package com.supertaskhelper.search
 
-import spray.json.DefaultJsonProtocol
+import spray.json.{ JsString, JsValue, RootJsonFormat, DefaultJsonProtocol }
 import com.supertaskhelper.search.SearchSolrCoreActor.{ SearchResultsSolrWrapper, SearchResults, SolrSearchDoc }
+import com.supertaskhelper.domain.search.Searchable
+import com.supertaskhelper.domain.{ User, Task }
+import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.UserJsonFormat._
+import spray.json._
+import DefaultJsonProtocol._
+import com.supertaskhelper.search.SearchResultListJsonFormat._
+
+import com.supertaskhelper.search.SearchSolrCoreActor.SolrSearchDocFormat.SolrSearchDocJsonFormat
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,15 +22,45 @@ import com.supertaskhelper.search.SearchSolrCoreActor.{ SearchResultsSolrWrapper
 import com.supertaskhelper.domain.TaskJsonFormat._
 trait SaladJsonProtocol extends DefaultJsonProtocol {
 
-  implicit val searchResultList = jsonFormat1(SearchResultList.apply)
+  implicit val searchResultList = jsonFormat2(SearchResultList.apply)
 
   //  implicit val error = jsonFormat1(ErrorDto.apply)
 }
 
-trait SolrSearchJsonProtocol extends SnakifiedSprayJsonSupport {
+trait SearchJsonProtocol extends SnakifiedSprayJsonSupport {
   val blacklist = Set("numFound")
-
-  implicit val solrDoc = jsonFormat2(SolrSearchDoc.apply)
+  implicit object SearchableJsonFormat extends RootJsonFormat[Searchable] {
+    def write(a: Searchable) = a match {
+      case p: Task => p.toJson
+      case u: User => u.toJson
+    }
+    def read(value: JsValue) =
+      // If you need to read, you will need something in the
+      // JSON that will tell you which subclass to use
+      value.asJsObject.fields("type") match {
+        case JsString("TASK") => value.convertTo[Task]
+        case JsString("USER") => value.convertTo[User]
+      }
+  }
+  //    implicit val solrDoc = jsonFormat2(SolrSearchDoc.apply)
+  //  implicit object SolrSearchDocFormat extends DefaultJsonProtocol {
+  //    implicit object SolrSearchDocJsonFormat extends RootJsonFormat[SolrSearchDoc] {
+  //      def write(c: SolrSearchDoc) = JsObject(
+  //        "id" -> JsString(c.id),
+  //        "type" -> JsString(c.otype.get)
+  //
+  //      )
+  //      def read(value: JsValue) = {
+  //        value.asJsObject.getFields("id", "type", "_dist_") match {
+  //          case Seq(JsString(id), JsString(otype),JsString(_dist_)) =>
+  //            new SolrSearchDoc(id, Option(otype),Option(_dist_))
+  //          case _ => throw new DeserializationException("Color expected")
+  //        }
+  //      }
+  //    }
+  //
+  //  }
+  implicit val solrDoc: JsonFormat[SolrSearchDoc] = SolrSearchDocJsonFormat
   implicit val solrRes = jsonFormat2(SearchResults.apply)
   implicit val solrResWrapper = jsonFormat1(SearchResultsSolrWrapper.apply)
 }

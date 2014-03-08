@@ -34,7 +34,7 @@ trait TaskService extends Service {
     val collection = MongoFactory.getCollection("task")
     (collection find q).sort(MongoDBObject("createdDate" -> -1))
       .skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
-      .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x)).toSeq
+      .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x, params.distance)).toSeq
   }
 
   private def buildQuery(params: TaskParams): DBObject = {
@@ -57,7 +57,7 @@ trait TaskService extends Service {
     builder.result
   }
 
-  private def buildTask(taskResult: DBObject): Task = {
+  private def buildTask(taskResult: DBObject, distance: Option[String]): Task = {
 
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
@@ -78,7 +78,8 @@ trait TaskService extends Service {
       status = taskResult.getAs[String]("status").getOrElse(""),
       userId = taskResult.getAs[String]("userId").getOrElse(""),
       bids = Option(bidss),
-      comments = Option(comms))
+      comments = Option(comms),
+      distance = distance)
 
     task //return the task object
   }
@@ -174,7 +175,7 @@ trait TaskService extends Service {
     if (result != None) {
       val taskResult = result.get
 
-      buildTask(taskResult)
+      buildTask(taskResult, None)
     } else
       null
   }

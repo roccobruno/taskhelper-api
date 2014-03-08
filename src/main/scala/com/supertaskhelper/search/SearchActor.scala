@@ -3,7 +3,7 @@ package com.supertaskhelper.search
 import akka.actor._
 import akka.event.LoggingReceive
 import com.supertaskhelper.DefaultTimeout
-import com.supertaskhelper.service.TaskActor
+import com.supertaskhelper.service.{ UserActor, TaskActor }
 import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.search.SearchSolrCoreActor
 import akka.actor
@@ -23,13 +23,11 @@ class SearchActor(httpRequestContext: RequestContext) extends Actor with ActorLo
 
   def receive = LoggingReceive {
 
-    case SearchParams(terms, objType) => {
+    case s: SearchParams => {
 
-      //TODO gestire ricerca per utente and users!!!
-      val aggregator = createResultAggregator(self, createTaskFinder)
+      val aggregator = createResultAggregator(self, createTaskFinder, createUserActorFinder)
+      createSearchSolrActor tell (s, sender = aggregator)
 
-      createSearchSolrActor tell (terms.split("\\s").toSeq, sender = aggregator)
-      //      context.stop(self)
     }
 
     case s: SearchResultList => {
@@ -37,8 +35,10 @@ class SearchActor(httpRequestContext: RequestContext) extends Actor with ActorLo
       context.stop(self)
     }
 
-    case message @ _ =>
+    case message @ _ => {
       log.warning(s"Unknown message received by SearchActor: ${message}")
+      context.stop(self)
+    }
 
   }
 
@@ -47,7 +47,8 @@ class SearchActor(httpRequestContext: RequestContext) extends Actor with ActorLo
     name = "solr-search-client"
   )
 
-  def createResultAggregator(replyTo: ActorRef, taskActor: ActorRef) = context.actorOf(Props(classOf[TaskAggregator], replyTo, taskActor))
+  def createResultAggregator(replyTo: ActorRef, taskActor: ActorRef, userActor: ActorRef) = context.actorOf(Props(classOf[ResultsAggregator], replyTo, taskActor, userActor))
   def createTaskFinder = context.actorOf(Props(classOf[TaskActor]))
+  def createUserActorFinder = context.actorOf(Props(classOf[UserActor]))
 }
 

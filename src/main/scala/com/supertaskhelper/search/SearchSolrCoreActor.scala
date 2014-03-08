@@ -12,7 +12,7 @@ import akka.event.LoggingReceive
 import spray.httpx.SprayJsonSupport
 
 import com.supertaskhelper.search.SearchSolrCoreActor.{ SearchSolr, SearchResultsSolrWrapper }
-import spray.http.{ BasicHttpCredentials, Uri }
+import spray.http.{ HttpEntity, BasicHttpCredentials, Uri }
 import spray.client.pipelining._
 import spray.http.MediaTypes._
 import akka.pattern.pipe
@@ -20,17 +20,41 @@ import spray.can.Http
 
 import akka.event.LoggingReceive
 import spray.httpx.SprayJsonSupport
+import spray.httpx.unmarshalling.Unmarshaller
+import spray.json._
+import com.supertaskhelper.search.SearchSolrCoreActor.SearchResultsSolrWrapper
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.Settings
 
 object SearchSolrCoreActor {
 
   /**
    * DTO
    */
-  case class SearchResultsSolrWrapper(response: SearchResults)
+
+  case class SolrSearchDoc(id: String, otype: Option[String], distance: Option[String])
+
+  object SolrSearchDocFormat extends DefaultJsonProtocol {
+    implicit object SolrSearchDocJsonFormat extends RootJsonFormat[SolrSearchDoc] {
+      def write(c: SolrSearchDoc) = JsObject(
+        "id" -> JsString(c.id),
+        "type" -> JsString(c.otype.get)
+
+      )
+      def read(value: JsValue) = {
+        value.asJsObject.getFields("id", "type", "_dist_") match {
+          case Seq(JsString(id), JsString(otype), JsNumber(_dist_)) =>
+            new SolrSearchDoc(id, Option(otype), Option(_dist_.toString))
+          case _ => throw new DeserializationException("Color expected")
+        }
+      }
+    }
+
+  }
 
   case class SearchResults(numFound: Int, docs: Seq[SolrSearchDoc])
 
-  case class SolrSearchDoc(id: String, otype: Option[String])
+  case class SearchResultsSolrWrapper(response: SearchResults)
 
   /**
    * Actor Messages
@@ -44,12 +68,12 @@ trait SearchSolrCoreActor
     with SprayJsonSupport
     with ClientDirectives
 
-    with SolrSearchJsonProtocol {
+    with SearchJsonProtocol {
 
   lazy val pipeline = (
     colourLogRequest
 
-    ~> addCredentials(BasicHttpCredentials("sthsolr", "sthrocluigiosolr3"))
+    ~> addCredentials(BasicHttpCredentials(Settings.solr_username, Settings.solr_password))
     ~> sendReceive(transport)
     ~> colourLogResponse
     ~> forceMediaType(`application/json`)
@@ -57,33 +81,54 @@ trait SearchSolrCoreActor
   )
 
   def receive = LoggingReceive {
+    //    terms.split("\\s").toSeq
+    case s: SearchParams =>
 
-    case terms: Seq[String] =>
-
-      val sanitisedTerms = terms.map(sanitiseTerm)
-
-      val termStatement = sanitisedTerms match {
-        case term :: Nil => term
-        case _ =>
-          val termsSpace = terms.mkString(" ")
-          val termsAnd = terms.mkString(" AND ")
-          s"(($termsSpace) OR ($termsAnd))"
-      }
-
-      val uri = Uri(settings.searchSolr.nap + "/select") withQuery (
-        "q" -> s"$termStatement",
-        "fl" -> "id,type",
-        //        "qf" -> boostStatement(locale.lang),
-        "sort" -> "score desc",
-        "q.op" -> "AND",
-        "wt" -> "json",
-        "defType" -> "edismax"
-      )
+      val uri = Uri(settings.searchSolr.nap + "/select") withQuery (buildQuery(s))
 
       val f = pipeline(Get(uri))
         .map(_.response)
 
       f pipeTo sender
+  }
+
+  private def buildQuery(s: SearchParams): Map[String, String] = {
+    val sanitisedTerms = orStatement("search_field", s.terms.split("\\s").toSeq.map(sanitiseTerm))
+    val tesrmsWitType = s.otype match {
+      case None => sanitisedTerms
+      case _ => {
+        val typeClause = sanitisedTerms + " AND type:" + s.otype.get.toUpperCase
+        typeClause
+      }
+
+    }
+    if (s.sort.getOrElse("createdDate desc") contains ("position")) {
+      Map(
+        "q" -> s"$tesrmsWitType",
+
+        "sort" -> "geodist() desc",
+        "q.op" -> "AND",
+        "wt" -> "json",
+        "start" -> s.page.getOrElse(1).toString,
+        "rows" -> s.sizePage.getOrElse(10).toString,
+        "defType" -> "edismax",
+        "fl" -> "_dist_:geodist(),type,id",
+        "pt" -> s.position.get,
+        "sfield" -> "position"
+      )
+    } else {
+      Map(
+        "q" -> s"$tesrmsWitType",
+        "fl" -> "_dist_:score,type,id",
+        "sort" -> s.sort.getOrElse("score desc"),
+        "q.op" -> "AND",
+        "wt" -> "json",
+        "start" -> s.page.getOrElse(1).toString,
+        "rows" -> s.sizePage.getOrElse(10).toString,
+        "defType" -> "edismax"
+
+      )
+    }
   }
 
   /**
@@ -92,7 +137,7 @@ trait SearchSolrCoreActor
    */
   def orStatement(field: String, values: Seq[Any]) =
     if (values.isEmpty) ""
-    else values.mkString(s" AND ($field:", s" OR $field:", ")")
+    else values.mkString(s" ($field:", s" OR $field:", ")")
 
   /**
    * See

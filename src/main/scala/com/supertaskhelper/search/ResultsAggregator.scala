@@ -3,14 +3,16 @@ package com.supertaskhelper.search
 import akka.actor.{ ReceiveTimeout, ActorLogging, Actor, ActorRef }
 import java.util.Locale
 import com.supertaskhelper.Settings
-import com.supertaskhelper.search.TaskAggregator.{ NotEnriched, Enriched, Enrichable }
+
 import akka.event.LoggingReceive
-import com.supertaskhelper.domain.{ TaskParams, Task }
-import com.supertaskhelper.service.TaskNotFound
+import com.supertaskhelper.domain.{ User, Tasks, TaskParams, Task }
+import com.supertaskhelper.service.{ FindUser, UserNotFound, TaskNotFound }
 import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import org.bson.types.ObjectId
 import spray.json.DefaultJsonProtocol
+import com.supertaskhelper.domain.search.Searchable
+import com.supertaskhelper.search.ResultsAggregator.{ Enrichable, NotEnriched, Enriched }
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,7 +21,7 @@ import spray.json.DefaultJsonProtocol
  * Time: 16:58
  * To change this template use File | Settings | File Templates.
  */
-class TaskAggregator(replyTo: ActorRef, taskActorFinder: ActorRef)
+class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFinder: ActorRef)
     extends Actor
     with ActorLogging {
 
@@ -41,36 +43,65 @@ class TaskAggregator(replyTo: ActorRef, taskActorFinder: ActorRef)
       log.error("Timed out whilst enriching tasks {}", result)
       stop(self)
 
+    case UserNotFound(_) =>
+      stop(self)
+
     case TaskNotFound(_) =>
       stop(self)
 
     case SearchResults(_, docs) =>
-      if (docs.isEmpty) replyTo ! SearchResultList(Nil)
+      if (docs.isEmpty) replyTo ! SearchResultList(Nil, Nil)
 
       // We have received a list of search results for the SOLR search core
       result = docs.map(doc => NotEnriched(new ObjectId(doc.id)))
 
       // Let's fire a request to the PS API for each task
-      docs.foreach(doc => taskActorFinder ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None)))
+      docs.foreach(doc =>
+        (if (doc.otype.getOrElse("TASK") == "TASK") { taskActorFinder ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance)) }
+        else { userTaskFinder ! FindUser(doc.id, doc.distance) }
+        ))
 
-    case p: Task =>
+    case p: Tasks =>
       // We have received a full task back from the TaskFinder
       // Let's replace any non-enriched tasks (BasicTask) for this pid and channel ID with this FullTask
-      val enrich = result.map {
-        case NotEnriched(pid) if pid == p.id.get => Enriched(p)
-        case x => x
+      for (x <- p.tasks) {
+        val enrich = result.map {
+          case NotEnriched(pid) if pid == x.id.get => Enriched(x)
+          case x => x
+        }
+
+        //If enriching had no affect, then we must have received a incorrect task
+        if (result == enrich) {
+          log.error("Received unexpected task {} whilst enriching {}", p, result)
+          stop(self)
+        }
+
+        result = enrich
+
+        // After every enrichment, check if we are finished
+        checkForFinished
       }
 
-      //If enriching had no affect, then we must have received a incorrect task
-      if (result == enrich) {
-        log.error("Received unexpected task {} whilst enriching {}", p, result)
-        stop(self)
+    case u: User =>
+      // We have received a full task back from the TaskFinder
+      // Let's replace any non-enriched tasks (BasicTask) for this pid and channel ID with this FullTask
+      {
+        val enrich = result.map {
+          case NotEnriched(pid) if pid == u.id => Enriched(u)
+          case x => x
+        }
+
+        //If enriching had no affect, then we must have received a incorrect task
+        if (result == enrich) {
+          log.error("Received unexpected user {} whilst enriching {}", u, result)
+          stop(self)
+        }
+
+        result = enrich
+
+        // After every enrichment, check if we are finished
+        checkForFinished
       }
-
-      result = enrich
-
-      // After every enrichment, check if we are finished
-      checkForFinished
   }
 
   override def unhandled(x: Any) = {
@@ -83,7 +114,7 @@ class TaskAggregator(replyTo: ActorRef, taskActorFinder: ActorRef)
    * Forget about the search results we haven't enriched
    */
   def sendResponse = {
-    replyTo ! SearchResultList(enrichedSoFar)
+    replyTo ! SearchResultList(taskEnrichedSoFar, userEnrichedSoFar)
     stop(self)
   }
 
@@ -91,27 +122,37 @@ class TaskAggregator(replyTo: ActorRef, taskActorFinder: ActorRef)
    * Check if we have enriched all the search results with task information from the PS API
    */
   def checkForFinished =
-    if (enrichedSoFar.size == result.size) sendResponse
+    if ((taskEnrichedSoFar.size + userEnrichedSoFar.size) == result.size) sendResponse
 
   /**
    * We send an individual request to the PS API for each task search result.
    * This method returns the search results that we have enriched with PS API responses
    */
-  def enrichedSoFar = result.collect {
-    case Enriched(x) => x
+  def taskEnrichedSoFar = result.collect {
+    case Enriched(x) if x.isInstanceOf[Task] => x
+  }
+
+  def userEnrichedSoFar = result.collect {
+    case Enriched(x) if x.isInstanceOf[User] => x
   }
 }
 
-object TaskAggregator {
+object ResultsAggregator {
 
   trait Enrichable {
-    def toTask: Task
+    def toTask: Searchable
+
+  }
+
+  trait UserEnrichable {
+    def toUser: User
   }
   case class NotEnriched(taskId: ObjectId) extends Enrichable {
     def toTask = throw new NoSuchElementException("Cannot covert search result to task as it not been enriched with data from PS API")
   }
-  case class Enriched(prod: Task) extends Enrichable {
+  case class Enriched(prod: Searchable) extends Enrichable {
     def toTask = prod
   }
+
 }
 

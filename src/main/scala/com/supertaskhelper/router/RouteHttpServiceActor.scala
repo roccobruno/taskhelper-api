@@ -159,13 +159,18 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
       } ~ path("search") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
-            authenticate(authenticateUser) { user =>
-              parameters('terms.as[String]) { terms =>
+            //            authenticate(authenticateUser) { user =>
+            parameters('terms.as[String],
+              'otype.as[String].?,
+              'page.as[Int].?,
+              'sizePage.as[Int].?,
+              'sort.as[String].?,
+              'position.as[String].?).as(SearchParams) { terms =>
                 ctx =>
                   val perRequestSearchingActor = createSearchActor(ctx)
-                  perRequestSearchingActor ! SearchParams(terms, "task")
+                  perRequestSearchingActor ! terms
+                //              }
               }
-            }
           }
         }
       } ~ path("tasks" / "bids") {
@@ -219,7 +224,8 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               'sort.as[String].?,
               'city.as[String].?,
               'page.as[Int].?,
-              'sizePage.as[Int].?).as(TaskParams) { params =>
+              'sizePage.as[Int].?,
+              'distance.as[String].?).as(TaskParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! FindTask(params)

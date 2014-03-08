@@ -6,6 +6,9 @@ import java.text.SimpleDateFormat
 import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.User
 import com.supertaskhelper.common.enums.SOURCE
+import com.supertaskhelper.domain.search.Searchable
+import spray.json._
+import DefaultJsonProtocol._
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,10 +17,11 @@ import com.supertaskhelper.common.enums.SOURCE
  * Time: 20:40
  * To change this template use File | Settings | File Templates.
  */
-case class User(userName: String, isSTH: Boolean, email: String, password: String, id: String)
-
+case class User(userName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
+  distance: Option[String])
+    extends Searchable
 object UserJsonFormat extends DefaultJsonProtocol {
-  implicit val userFormat = jsonFormat5(User)
+  implicit val userFormat = jsonFormat7(User)
 }
 
 case class UserRegistration(userName: String, password: String, confirmPassword: String, email: String,

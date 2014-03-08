@@ -5,6 +5,7 @@ import java.util.Date
 
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
+import com.supertaskhelper.domain.search.Searchable
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,7 +28,7 @@ case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Location, postcode: String, regione: Option[String])
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String,
-  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]])
+  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String]) extends Searchable
 
 case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String]) {
   require(!comment.isEmpty, "comment  cannot be empty")
@@ -152,18 +153,19 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   }
   implicit val bidFormat = jsonFormat9(Bid)
   implicit val commentFormat = jsonFormat7(Comment)
-  implicit val taskFormat = jsonFormat11(Task)
+  implicit val taskFormat = jsonFormat12(Task)
 }
 
-case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String], sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int]) extends Pagination(page, sizePage)
+case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
+  sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int], distance: Option[String]) extends Pagination(page, sizePage)
 
 object TaskParamsFormat extends DefaultJsonProtocol {
-  implicit val taskParamsFormat = jsonFormat8(TaskParams)
+  implicit val taskParamsFormat = jsonFormat9(TaskParams)
 }
 
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.TaskJsonFormat._
-  implicit val taskFormat = jsonFormat11(Task)
+  implicit val taskFormat = jsonFormat12(Task)
   implicit val tasksFormat = jsonFormat1(Tasks)
 }

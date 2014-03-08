@@ -16,9 +16,9 @@ import com.supertaskhelper.domain.{ Tasks, TaskParams }
 class TaskActor extends Actor with ActorLogging with ActorFactory with TaskService {
   def receive = LoggingReceive {
 
-    case params: TaskParams => {
+    case params: FindTask => {
 
-      val task = findTask(params)
+      val task = findTask(params.params)
       sender ! (if (task.size > 0) Tasks(task) else TaskNotFound(""))
     }
 
