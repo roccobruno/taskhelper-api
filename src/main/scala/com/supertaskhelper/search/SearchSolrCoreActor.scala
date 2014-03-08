@@ -109,7 +109,7 @@ trait SearchSolrCoreActor
         "sort" -> "geodist() desc",
         "q.op" -> "AND",
         "wt" -> "json",
-        "start" -> s.page.getOrElse(1).toString,
+        "start" -> s.page.getOrElse(0).toString,
         "rows" -> s.sizePage.getOrElse(10).toString,
         "defType" -> "edismax",
         "fl" -> "_dist_:geodist(),type,id",
