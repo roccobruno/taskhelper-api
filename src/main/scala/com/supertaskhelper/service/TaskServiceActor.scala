@@ -72,10 +72,10 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
-    case FindTask(params: TaskParams) => {
-      log.info("Received request to search task with params:{}", params)
+    case f: FindTask => {
+      log.info("Received request to search task with params:{}", f)
       val actor = createTaskActor()
-      actor ! params
+      actor ! f
     }
 
     case FindBids(taskId: String) => {
