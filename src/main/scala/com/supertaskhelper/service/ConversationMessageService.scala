@@ -33,8 +33,8 @@ trait ConversationMessageService extends UserService {
 
     var collection = MongoFactory.getCollection("conversation")
     var query = ("accessibleBy" $in Seq(params.userId.get))
-    val res = (collection find query).skip((params.page.getOrElse(1) - 1) * params.pageSize.getOrElse(10))
-      .limit(params.pageSize.getOrElse(10)).sort(MongoDBObject("lastUpdate" -> -1)).map(x => buildConversation(x)).toSeq
+    val res = (collection find query).skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
+      .limit(params.sizePage.getOrElse(10)).sort(MongoDBObject("lastUpdate" -> -1)).map(x => buildConversation(x)).toSeq
 
     res
 
@@ -55,8 +55,8 @@ trait ConversationMessageService extends UserService {
   def findConversationMessages(conversationParams: ConversationParams): Seq[Message] = {
     var collection = MongoFactory.getCollection("message")
     var query = MongoDBObject("conversationId" -> conversationParams.id.get)
-    val res = (collection find query).skip((conversationParams.page.getOrElse(1) - 1) * conversationParams.pageSize.getOrElse(10))
-      .limit(conversationParams.pageSize.getOrElse(10)).sort(MongoDBObject("dateSent" -> -1)).map(x => buildMessage(x)).toSeq
+    val res = (collection find query).skip((conversationParams.page.getOrElse(1) - 1) * conversationParams.sizePage.getOrElse(10))
+      .limit(conversationParams.sizePage.getOrElse(10)).sort(MongoDBObject("dateSent" -> -1)).map(x => buildMessage(x)).toSeq
 
     res
   }

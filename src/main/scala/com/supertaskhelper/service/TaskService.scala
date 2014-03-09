@@ -63,7 +63,7 @@ trait TaskService extends Service {
     val comms: Seq[Comment] = taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
     val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
-    val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
+    val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
     import _root_.scala.collection.JavaConverters._
@@ -190,7 +190,7 @@ trait TaskService extends Service {
 
         "address" -> task.address.address,
         "location" -> MongoDBObject(
-          "latitude" -> task.address.location.latitude
+          "latitude" -> task.address.location.get.latitude
         )))
     collection.save(doc)
 

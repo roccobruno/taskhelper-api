@@ -4,7 +4,7 @@ import com.supertaskhelper.{ Settings, MongoFactory }
 import com.supertaskhelper.domain.{ Address, Location, UserRegistration, User }
 import com.mongodb.casbah.Imports._
 import java.util.{ Locale, GregorianCalendar, Calendar, Date }
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{ ActorSystem, Actor, ActorLogging }
 import akka.event.LoggingReceive
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.mongodb.casbah.commons.MongoDBObject
@@ -32,7 +32,7 @@ trait UserService extends Service {
    * @param email
    * @return
    */
-  def findUserByEmail(email: String) = {
+  def findUserByEmail(email: String): (Boolean, User) = {
     val q = MongoDBObject("email" -> email)
     val collection = MongoFactory.getCollection("user")
     getUser(collection, q)
@@ -45,11 +45,12 @@ trait UserService extends Service {
     if (res != None) {
 
       val userResult = res.get
-      val addobj = userResult.get("address").asInstanceOf[BasicDBObject]
-      val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
-      val location = if (locationObj != null) { Location(locationObj.getString("longitude"), locationObj.getString("latitude")) } else null
+      val addobj = userResult.getAsOrElse[BasicDBObject]("address", null)
+      val locationObj = if (addobj != null) addobj.getAsOrElse[BasicDBObject]("location", null) else null
+      val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
-      val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
+      val address: Option[Address] = if (addobj != null) Option(Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione"))))
+      else None
 
       user = User(
         userName = userResult.getAs[String]("username").get,
@@ -75,7 +76,7 @@ trait UserService extends Service {
       (false, user)
   }
 
-  def findUserById(id: String) = {
+  def findUserById(id: String): (Boolean, User) = {
 
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
     val collection = MongoFactory.getCollection("user")

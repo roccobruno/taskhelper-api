@@ -123,7 +123,7 @@ import DefaultJsonProtocol._
     "webcamVerified": false,
  */
 case class User(userName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
-  distance: Option[String], address: Address, bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
+  distance: Option[String], address: Option[Address], bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
   webcamVerified: Option[Boolean])
     extends Searchable

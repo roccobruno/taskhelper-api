@@ -1,10 +1,11 @@
-package com.supertaskhelper.service
+package com.supertaskhelper.service.actors
 
 import akka.actor.{ ActorLogging, Actor }
 import akka.event.LoggingReceive
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.util.ActorFactory
 import com.supertaskhelper.domain.{ Tasks, TaskParams }
+import com.supertaskhelper.service.TaskService
 
 /**
  * Created with IntelliJ IDEA.

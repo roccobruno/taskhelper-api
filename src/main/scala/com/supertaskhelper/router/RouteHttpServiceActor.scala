@@ -18,23 +18,16 @@ import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.service._
 import com.supertaskhelper.service.TaskServiceActor._
 import com.supertaskhelper.search.SearchActor
-import com.supertaskhelper.domain.search.{ UserSearchParams, SearchParams }
+import com.supertaskhelper.domain.search._
 import com.supertaskhelper.security.{ Logout, LoginActor, UserLogin, UserAuthentication }
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.domain.search.UserSearchParamsJsonFormat._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-import com.supertaskhelper.domain.search.UserSearchParams
-import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
-import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
-import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
-import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.Code
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.domain.UserRegistration
@@ -46,14 +39,35 @@ import com.supertaskhelper.domain.MessagesJsonFormat._
 import com.supertaskhelper.domain.ConversationsJsonFormat._
 import com.supertaskhelper.domain.ConversationParams
 import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.domain.Bid
 import com.supertaskhelper.service.Code
 import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.domain.UserRegistration
+import com.supertaskhelper.domain.Status
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.service.actors.ActivityActor
+import com.supertaskhelper.domain.ConversationParams
+import com.supertaskhelper.domain.Response
+import com.supertaskhelper.domain.search.UserSearchParams
+import com.supertaskhelper.service.TaskServiceActor.CreateBid
+import spray.routing.RequestContext
+import com.supertaskhelper.domain.Message
+import com.supertaskhelper.service.TaskServiceActor.FindBids
+import com.supertaskhelper.service.CreateMessage
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.service.TaskServiceActor.FindComments
+import com.supertaskhelper.domain.Bid
+import com.supertaskhelper.service.Code
+import com.supertaskhelper.domain.Comment
+import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateComment
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
 import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.Status
@@ -91,6 +105,9 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
 
   def createConversationMessageActor(ctx: RequestContext): ActorRef = {
     actorRefFactory.actorOf(Props(classOf[ConversationMessageActor], ctx), "conversation-message-code-actor")
+  }
+  def createActivityActor(ctx: RequestContext): ActorRef = {
+    actorRefFactory.actorOf(Props(classOf[ActivityActor], ctx), "activity-code-actor")
   }
 
   def createPerUserActor(ctx: RequestContext): ActorRef =
@@ -256,7 +273,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             parameters(
               'id.as[String].?,
               'page.as[Int].?,
-              'pageSize.as[Int].?,
+              'sizePage.as[Int].?,
               'userId.as[String].?).as(ConversationParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createConversationMessageActor(ctx)
@@ -274,6 +291,20 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
             }
           }
+      } ~ path("activities") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'subjectId.as[String].?,
+              'page.as[Int].?,
+              'sizePage.as[Int].?,
+              'positionId.as[Int].?).as(ActivityParams) { params =>
+                ctx =>
+                  val perRequestSearchingActor = createActivityActor(ctx)
+                  perRequestSearchingActor ! params
+              }
+          }
+        }
       }
 
     } ~

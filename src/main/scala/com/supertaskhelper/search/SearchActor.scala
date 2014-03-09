@@ -1,15 +1,19 @@
 package com.supertaskhelper.search
+import spray.caching.{ LruCache, Cache }
+
+import spray.util._
+import scala.concurrent.Future
 
 import akka.actor._
 import akka.event.LoggingReceive
 import com.supertaskhelper.DefaultTimeout
-import com.supertaskhelper.service.{ UserActor, TaskActor }
 import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.search.SearchSolrCoreActor
 import akka.actor
 import spray.routing.RequestContext
 import com.supertaskhelper.search.SearchResultListJsonFormat._
 import spray.httpx.SprayJsonSupport._
+import com.supertaskhelper.service.actors.{ UserActor, TaskActor }
 
 /**
  * Created with IntelliJ IDEA.

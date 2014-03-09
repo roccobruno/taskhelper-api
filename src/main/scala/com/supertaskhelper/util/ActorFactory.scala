@@ -18,7 +18,7 @@ trait ActorFactory {
   }
 
   override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
-    case _ => Restart
+    case _ => Stop
   }
 
 }

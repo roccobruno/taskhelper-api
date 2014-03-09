@@ -41,6 +41,7 @@ libraryDependencies ++= {
         "io.spray" % "spray-testkit" % spray % "test",
         "io.spray" %% "spray-json" % "1.2.5",
         "io.spray"            %   "spray-servlet" % sprayV,
+        "com.googlecode.concurrentlinkedhashmap" % "concurrentlinkedhashmap-lru" % "1.4",
         "org.scalatest" %% "scalatest" % "2.0" % "test",
          "org.eclipse.jetty"       %   "jetty-webapp"  % "8.1.13.v20130916"    % "container",
         "org.eclipse.jetty.orbit" %   "javax.servlet" % "3.0.0.v201112011016" % "container"  artifacts Artifact("javax.servlet", "jar", "jar"),

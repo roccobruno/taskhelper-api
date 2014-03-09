@@ -65,7 +65,7 @@ object MessageJsonFormat extends DefaultJsonProtocol {
   implicit val messageFormat = jsonFormat12(Message)
 }
 
-case class ConversationParams(id: Option[String], page: Option[Int], pageSize: Option[Int], userId: Option[String]) {
+case class ConversationParams(id: Option[String], page: Option[Int], sizePage: Option[Int], userId: Option[String]) {
 
   require((id.isDefined || userId.isDefined), "either id or user Id must be supplied")
 }

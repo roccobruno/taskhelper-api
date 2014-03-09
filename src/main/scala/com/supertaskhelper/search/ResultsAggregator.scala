@@ -6,13 +6,13 @@ import com.supertaskhelper.Settings
 
 import akka.event.LoggingReceive
 import com.supertaskhelper.domain.{ User, Tasks, TaskParams, Task }
-import com.supertaskhelper.service.{ FindUser, UserNotFound, TaskNotFound }
 import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import org.bson.types.ObjectId
 import spray.json.DefaultJsonProtocol
 import com.supertaskhelper.domain.search.Searchable
 import com.supertaskhelper.search.ResultsAggregator.{ Enrichable, NotEnriched, Enriched }
+import com.supertaskhelper.service.actors.{ UserNotFound, TaskNotFound, FindUser }
 
 /**
  * Created with IntelliJ IDEA.

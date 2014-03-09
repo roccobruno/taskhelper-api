@@ -16,11 +16,9 @@ import com.supertaskhelper.common.jms.alerts.{ CommentAddedAlert, BidAlert, Bett
 import spray.http.StatusCodes
 import com.supertaskhelper.domain.TasksJsonFormat._
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskNotFound
 import spray.routing.RequestContext
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
 import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.service.TaskNotFound
 import com.supertaskhelper.service.TaskServiceActor.CreateBid
 import spray.routing.RequestContext
 import com.supertaskhelper.service.TaskServiceActor.FindBids
@@ -36,6 +34,7 @@ import com.supertaskhelper.domain.CommentJsonFormat._
 import com.supertaskhelper.domain.CommentsJsonFormat._
 
 import java.util.Date
+import com.supertaskhelper.service.actors.{ TaskActor, TaskNotFound }
 
 /**
  * Created with IntelliJ IDEA.
