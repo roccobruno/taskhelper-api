@@ -59,10 +59,15 @@ trait TaskService extends Service {
 
   private def buildTask(taskResult: DBObject, distance: Option[String]): Task = {
 
-    val bidss: Seq[Bid] = taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
-    val comms: Seq[Comment] = taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
-    val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
-    val locationObj = addobj.get("location").asInstanceOf[BasicDBObject]
+    val bidss: Option[Seq[Bid]] =
+      if(taskResult.get("bids").asInstanceOf[BasicDBList]!=null){Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
+      )} else None
+
+        val comms: Option[Seq[Comment]] = if(taskResult.get("comments").asInstanceOf[BasicDBList]!=null) {
+        Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
+        )} else None
+     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
+    val locationObj = if(addobj!=null) addobj.get("location").asInstanceOf[BasicDBObject] else null
     val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
@@ -77,18 +82,29 @@ trait TaskService extends Service {
       time = taskResult.getAs[String]("time").getOrElse(""),
       status = taskResult.getAs[String]("status").getOrElse(""),
       userId = taskResult.getAs[String]("userId").getOrElse(""),
-      bids = Option(bidss),
-      comments = Option(comms),
+      bids = bidss,
+      comments = comms,
       distance = distance,
       category = taskResult.getAs[String]("category"),
-      categoryId = taskResult.getAs[String]("category"))
+      categoryId = taskResult.getAs[String]("category"),
+      taskType = taskResult.getAs[String]("type").get,
+      emailVerBudgetRequired = taskResult.getAs[Boolean]("emailVerBudgetRequired"),
+      linkedInBudgetRequired =    taskResult.getAs[Boolean]("linkedInBudgetRequired"),
+      fbBudgetRequired =  taskResult.getAs[Boolean]("fbBudgetRequired"),
+      passportIdBudgetRequired = taskResult.getAs[Boolean]("passportIdBudgetRequired"),
+      twitterBudgetRequired = taskResult.getAs[Boolean]("twitterBudgetRequired"),
+      secDocBudgetRequired = taskResult.getAs[Boolean]("secDocBudgetRequired"),
+      webcamBudgetRequired = taskResult.getAs[Boolean]("webcamBudgetRequired")
+
+
+    )
     task //return the task object
   }
 
-  def deleteTask(taskId:String) {
+  def deleteTask(taskId: String) {
     val collection = MongoFactory.getCollection("task")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
-    collection remove(q)
+    collection remove (q)
   }
 
   private def buildBid(bid: DBObject, taskId: String): Bid = {
@@ -209,20 +225,73 @@ trait TaskService extends Service {
 
   def createTask(task: Task) = {
     val collection = MongoFactory.getCollection("task")
-    val doc = MongoDBObject(
-
-      "createdDate" -> task.createdDate,
-      "description" -> task.description,
-      "address" -> MongoDBObject(
-
-        "address" -> task.address.address,
-        "location" -> MongoDBObject(
-          "latitude" -> task.address.location.get.latitude
-        )))
+    val doc = if(task.address!=null) buildMongodBObjTaskWithAddress(task) else buildMongodBObjTaskWithoutAddress(task)
     collection.save(doc)
 
     Response("Success", doc.getAs[org.bson.types.ObjectId]("_id").get.toString)
 
+  }
+  private def buildMongodBObjTaskWithAddress(task:Task):MongoDBObject = {
+   val obj = MongoDBObject(
+
+      "createdDate" -> task.createdDate,
+      "description" -> task.description,
+      "title" -> task.title,
+      "endDate" ->task.endDate,
+      "time" -> task.time,
+      "userId" -> task.userId,
+      "status" -> task.status,
+      "category" -> task.category,
+      "categoryId" -> task.categoryId,
+      "type" -> task.taskType,
+      "emailVerBudgetRequired" ->task.emailVerBudgetRequired,
+      "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
+      "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
+      "fbBudgetRequired" -> task.fbBudgetRequired,
+      "secDocBudgetRequired" ->task.secDocBudgetRequired,
+      "webcamBudgetRequired" -> task.webcamBudgetRequired,
+
+      "address" -> MongoDBObject(
+        "city" -> task.address.city,
+        "country" -> task.address.country,
+        "postcode" -> task.address.postcode,
+        "regione" -> task.address.regione,
+        "address" -> task.address.address,
+        "location" -> MongoDBObject(
+          "latitude" -> task.address.location.get.latitude,
+          "longitude" ->  task.address.location.get.longitude
+        ))
+
+
+    )
+
+    obj
+  }
+
+  private def buildMongodBObjTaskWithoutAddress(task:Task) :MongoDBObject= {
+  val obj=  MongoDBObject(
+
+      "createdDate" -> task.createdDate,
+      "description" -> task.description,
+      "title" -> task.title,
+      "endDate" ->task.endDate,
+      "time" -> task.time,
+      "userId" -> task.userId,
+      "status" -> task.status,
+      "category" -> task.category,
+      "categoryId" -> task.categoryId,
+    "type" -> task.taskType,
+    "emailVerBudgetRequired" ->task.emailVerBudgetRequired,
+    "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
+    "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
+    "fbBudgetRequired" -> task.fbBudgetRequired,
+    "secDocBudgetRequired" ->task.secDocBudgetRequired,
+    "webcamBudgetRequired" -> task.webcamBudgetRequired
+
+
+
+    )
+    obj
   }
 
 }

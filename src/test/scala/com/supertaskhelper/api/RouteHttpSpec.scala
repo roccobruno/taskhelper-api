@@ -6,14 +6,17 @@ import concurrent.duration._
 import com.supertaskhelper.router.RouteHttpService
 import org.scalatest.Matchers._
 import spray.http.StatusCodes
-import com.supertaskhelper.domain.{Response, Address, Location, Task}
+import com.supertaskhelper.domain._
 import java.util.Date
 import com.supertaskhelper.domain.TaskJsonFormat._
+
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import spray.httpx.SprayJsonSupport._
-
-
-
+import com.supertaskhelper.domain.Response
+import com.supertaskhelper.domain.Location
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.Address
+import com.supertaskhelper.domain.TaskJsonFormat._
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,8 +34,11 @@ class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest  with Matchers 
     "85038",Option("Basilicata")
   )
 
-  val task  = Task(None,"Api Task Test","Api Task test desc",new Date(),address,new Date(),"17.00","OPEN","53028f49036462126f7f042b",None,None,None,Option("Tuttofare"),
-  Option("52515bb0e4b094388a43ca39")
+
+
+  val task  = Task(None,"Api Task Test","Api Task test desc",new Date(),address,new Date(),
+    "17.00","OPEN","53028f49036462126f7f042b",None,None,None,Option("Tuttofare"),
+  Option("52515bb0e4b094388a43ca39"),"OFFLINE",Option(true) ,Option(true),Option(true),Option(true),Option(true),Option(true),Option(true)
 
 
   )
@@ -56,12 +62,21 @@ class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest  with Matchers 
         taskId = Option(responseAs[Response].id)
         println(taskId)
       }
+      import com.supertaskhelper.domain.TasksJsonFormat._
+      Get("/api/tasks?id="+taskId.get) ~> route ~> check {
+        status should be (StatusCodes.OK)
+        assert(responseAs[Tasks].tasks(0).id == taskId)
+      }
 
+
+
+    }
+
+    "accept request to delte a task" in {
       Delete("/api/tasks?id="+taskId.get) ~> route ~> check {
         status should be (StatusCodes.OK)
 
       }
-
     }
 
 
