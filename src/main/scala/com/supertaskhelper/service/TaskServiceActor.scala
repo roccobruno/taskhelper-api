@@ -99,6 +99,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     }
 
     case DeleteTask(id: String) =>
+
       log.info("Received request to delete task with id:{}", id)
       deleteTask(id.toString)
       httpRequestContext.complete(Response("Success",id))
