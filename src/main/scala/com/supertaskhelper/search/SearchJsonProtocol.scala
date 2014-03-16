@@ -42,24 +42,7 @@ trait SearchJsonProtocol extends SnakifiedSprayJsonSupport {
         case JsString("USER") => value.convertTo[User]
       }
   }
-  //    implicit val solrDoc = jsonFormat2(SolrSearchDoc.apply)
-  //  implicit object SolrSearchDocFormat extends DefaultJsonProtocol {
-  //    implicit object SolrSearchDocJsonFormat extends RootJsonFormat[SolrSearchDoc] {
-  //      def write(c: SolrSearchDoc) = JsObject(
-  //        "id" -> JsString(c.id),
-  //        "type" -> JsString(c.otype.get)
-  //
-  //      )
-  //      def read(value: JsValue) = {
-  //        value.asJsObject.getFields("id", "type", "_dist_") match {
-  //          case Seq(JsString(id), JsString(otype),JsString(_dist_)) =>
-  //            new SolrSearchDoc(id, Option(otype),Option(_dist_))
-  //          case _ => throw new DeserializationException("Color expected")
-  //        }
-  //      }
-  //    }
-  //
-  //  }
+
   implicit val solrDoc: JsonFormat[SolrSearchDoc] = SolrSearchDocJsonFormat
   implicit val solrRes = jsonFormat2(SearchResults.apply)
   implicit val solrResWrapper = jsonFormat1(SearchResultsSolrWrapper.apply)
