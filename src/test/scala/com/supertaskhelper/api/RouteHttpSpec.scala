@@ -57,10 +57,10 @@ class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest  with Matchers 
         println(taskId)
       }
 
-//      Get("/api/tasks?taskId="+taskId.get) ~> route ~> check {
-//        status should be (StatusCodes.OK)
-//        assert(responseAs[Task].id == taskId)
-//      }
+      Delete("/api/tasks?id="+taskId.get) ~> route ~> check {
+        status should be (StatusCodes.OK)
+
+      }
 
     }
 

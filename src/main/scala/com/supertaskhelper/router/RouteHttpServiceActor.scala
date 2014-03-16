@@ -271,7 +271,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
           } ~
           delete {
             respondWithMediaType(MediaTypes.`application/json`) {
-              parameters('id.as[Int]) { id =>
+              parameters('id.as[String]) { id =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! DeleteTask(id)

@@ -98,8 +98,10 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
-    case DeleteTask(id: Int) =>
+    case DeleteTask(id: String) =>
       log.info("Received request to delete task with id:{}", id)
+      deleteTask(id.toString)
+      httpRequestContext.complete(Response("Success",id))
       context.stop(self)
     case CreateTask(task: Task, language: String) =>
       log.info("Received request to create the  task :{}", task)
@@ -159,7 +161,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 object TaskServiceActor {
 
   case class FindTask(params: TaskParams)
-  case class DeleteTask(id: Int)
+  case class DeleteTask(id: String)
   case class CreateTask(task: Task, language: String)
   case class FindBids(taskId: String)
   case class FindComments(taskId: String)

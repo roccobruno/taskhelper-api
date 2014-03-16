@@ -85,6 +85,12 @@ trait TaskService extends Service {
     task //return the task object
   }
 
+  def deleteTask(taskId:String) {
+    val collection = MongoFactory.getCollection("task")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
+    collection remove(q)
+  }
+
   private def buildBid(bid: DBObject, taskId: String): Bid = {
 
     Bid(
