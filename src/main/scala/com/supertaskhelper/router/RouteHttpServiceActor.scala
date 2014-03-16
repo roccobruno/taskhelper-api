@@ -210,6 +210,17 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
             }
           }
+      } ~ path("tasks" / "category") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'type.as[String].?) { otype =>
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! FindTaskCategory(otype)
+              }
+          }
+        }
       } ~ path("tasks" / "comments") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {

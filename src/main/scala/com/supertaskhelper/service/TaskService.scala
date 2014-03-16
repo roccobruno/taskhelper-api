@@ -79,8 +79,9 @@ trait TaskService extends Service {
       userId = taskResult.getAs[String]("userId").getOrElse(""),
       bids = Option(bidss),
       comments = Option(comms),
-      distance = distance)
-
+      distance = distance,
+      category = taskResult.getAs[String]("category"),
+      categoryId = taskResult.getAs[String]("category"))
     task //return the task object
   }
 
@@ -140,7 +141,7 @@ trait TaskService extends Service {
   }
 
   def findBids(taskId: String) = {
-    findTaskById(taskId).bids.get.sortWith(_.createdDate after _.createdDate)
+    findTaskById(taskId).get.bids.get.sortWith(_.createdDate after _.createdDate)
   }
 
   def createComment(comment: Comment, commentId: String) = {
@@ -163,11 +164,31 @@ trait TaskService extends Service {
     )
   }
 
-  def findCommentss(taskId: String) = {
-    findTaskById(taskId).comments.get.sortWith(_.dateCreated after _.dateCreated)
+  def findTaskCategory(categoryType: Option[String]) = {
+    val collection = MongoFactory.getCollection("userSkills")
+    val query = MongoDBObject("type" -> categoryType.getOrElse(""))
+    val result = if (categoryType.isDefined) { collection find query } else { collection find }
+
+    TaskCategories(result.map(x => buildTaskCategory(x)).toSeq)
+
   }
 
-  def findTaskById(id: String) = {
+  private def buildTaskCategory(category: DBObject): TaskCategory = {
+    TaskCategory(
+      id = category.getAs[ObjectId]("_id").get.toString,
+      categoryType = category.getAs[String]("type"),
+      title_it = category.getAs[String]("title_it"),
+      title_en = category.getAs[String]("title_en"),
+      description = category.getAs[String]("description"),
+      order = category.getAs[Int]("order")
+    )
+  }
+
+  def findComments(taskId: String) = {
+    findTaskById(taskId).get.comments.get.sortWith(_.dateCreated after _.dateCreated)
+  }
+
+  def findTaskById(id: String): Option[Task] = {
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
 
     val collection = MongoFactory.getCollection("task")
@@ -175,9 +196,9 @@ trait TaskService extends Service {
     if (result != None) {
       val taskResult = result.get
 
-      buildTask(taskResult, None)
+      Option(buildTask(taskResult, None))
     } else
-      null
+      None
   }
 
   def createTask(task: Task) = {

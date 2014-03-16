@@ -32,7 +32,8 @@ import com.supertaskhelper.domain.BidJsonFormat._
 import com.supertaskhelper.domain.BidsJsonFormat._
 import com.supertaskhelper.domain.CommentJsonFormat._
 import com.supertaskhelper.domain.CommentsJsonFormat._
-
+import com.supertaskhelper.domain.TaskCategoryJsonFormat._
+import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
 import java.util.Date
 import com.supertaskhelper.service.actors.{ TaskActor, TaskNotFound }
 
@@ -43,7 +44,8 @@ import com.supertaskhelper.service.actors.{ TaskActor, TaskNotFound }
  * Time: 22:49
  * To change this template use File | Settings | File Templates.
  */
-class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging with TaskService with AlertMessageService {
+class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging
+    with TaskService with AlertMessageService {
 
   def createTaskActor(): ActorRef = {
     context.actorOf(Props(classOf[TaskActor]))
@@ -79,12 +81,20 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     }
 
     case FindBids(taskId: String) => {
-      httpRequestContext.complete(Bids(findBids(taskId)))
+
+      val task = findTaskById(taskId)
+      if (task.isDefined) httpRequestContext.complete(Bids(task.get.bids.get.sortWith(_.createdDate after _.createdDate)))
+      else
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
+
       context.stop(self)
     }
 
     case FindComments(taskId: String) => {
-      httpRequestContext.complete(Comments(findCommentss(taskId)))
+      val task = findTaskById(taskId)
+      if (task.isDefined) httpRequestContext.complete(Comments(task.get.comments.get.sortWith(_.dateCreated after _.dateCreated)))
+      else
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
       context.stop(self)
     }
 
@@ -101,7 +111,11 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
     case CreateBid(bid: Bid, language: String) => {
       log.info("Received request to create the  bid :{}", bid)
-      val betterBid = findTaskById(bid.taskId.get).bids.get.filter(b => b.incrementedValue < bid.incrementedValue)
+
+      val task = findTaskById(bid.taskId.get)
+      if (!task.isDefined)
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
+      val betterBid = task.get.bids.get.filter(b => b.incrementedValue < bid.incrementedValue)
       val bidId = "BID_" + (new Date()).getTime
       val response = createBid(bid, bidId)
       val sendAlertActor = createSendAlertActor(context)
@@ -118,14 +132,21 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
     case CreateComment(comment: Comment, language: String) => {
       log.info("Received request to create the  Comment :{}", comment)
-
-      val commentId = comment.taskId + "-" + findTaskById(comment.taskId).comments.size
+      val task = findTaskById(comment.taskId)
+      if (!task.isDefined)
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
+      val commentId = comment.taskId + "-" + findTaskById(comment.taskId).get.comments.size
       val response = createComment(comment, commentId)
       val sendAlertActor = createSendAlertActor(context)
       sendAlertActor ! new CommentAddedAlert(comment.taskId, commentId, comment.userId, language, false);
       httpRequestContext.complete(response)
       context.stop(self)
 
+    }
+
+    case f: FindTaskCategory => {
+      httpRequestContext.complete(findTaskCategory(f.categoryType))
+      context.stop(self)
     }
     case ReceiveTimeout =>
       context.stop(self)
@@ -144,6 +165,7 @@ object TaskServiceActor {
   case class FindComments(taskId: String)
   case class CreateBid(bid: Bid, language: String)
   case class CreateComment(comment: Comment, language: String)
+  case class FindTaskCategory(categoryType: Option[String])
 
   def props(name: String) = Props(classOf[TaskServiceActor], name)
 

@@ -33,8 +33,8 @@ trait ActivityService extends Service with UserService with TaskService {
     var userObj = if (user._1) user._2 else null
 
     val task = if (activity.getAs[String]("objectId").isDefined &&
-      !activity.getAs[String]("objectId").get.isEmpty) findTaskById(activity.getAs[String]("objectId").get) else null
-    var objDet = if (task != null) task.title else "TASK NOT FOUND"
+      !activity.getAs[String]("objectId").get.isEmpty) findTaskById(activity.getAs[String]("objectId").get) else None
+    var objDet = if (task.isDefined) task.get.title else "TASK NOT FOUND"
     Activity(
       id = activity.getAs[ObjectId]("_id").get.toString,
       subjectId = activity.getAs[String]("subjectId").get,

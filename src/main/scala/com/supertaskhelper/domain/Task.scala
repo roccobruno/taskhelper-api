@@ -28,7 +28,8 @@ case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: String, regione: Option[String])
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String,
-  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String]) extends Searchable
+  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
+  categoryId: Option[String]) extends Searchable
 
 case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String]) {
   require(!comment.isEmpty, "comment  cannot be empty")
@@ -153,7 +154,7 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   }
   implicit val bidFormat = jsonFormat9(Bid)
   implicit val commentFormat = jsonFormat7(Comment)
-  implicit val taskFormat = jsonFormat12(Task)
+  implicit val taskFormat = jsonFormat14(Task)
 }
 
 case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
@@ -166,6 +167,6 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.TaskJsonFormat._
-  implicit val taskFormat = jsonFormat12(Task)
+  implicit val taskFormat = jsonFormat14(Task)
   implicit val tasksFormat = jsonFormat1(Tasks)
 }
