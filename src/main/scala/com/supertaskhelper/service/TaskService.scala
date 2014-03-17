@@ -15,6 +15,8 @@ import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import java.util.Date
 import com.supertaskhelper.common.enums.COMMENT_STATUS
+import org.bson.types.ObjectId
+import com.mongodb.casbah.commons.TypeImports.ObjectId
 
 /**
  * Created with IntelliJ IDEA.
@@ -39,7 +41,7 @@ trait TaskService extends Service {
 
   private def buildQuery(params: TaskParams): DBObject = {
     val builder = MongoDBObject.newBuilder
-    if (params.id.isDefined)
+    if (params.id.isDefined && ObjectId.isValid(params.id.get))
       builder += "_id" -> new org.bson.types.ObjectId(params.id.get)
 
     if (params.city.isDefined)
@@ -61,7 +63,7 @@ trait TaskService extends Service {
 
     val bidss: Option[Seq[Bid]] =
       if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
-        Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
+        Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate.get after _.createdDate.get)
         )
       } else None
 
@@ -80,7 +82,7 @@ trait TaskService extends Service {
       id = taskResult.getAs[ObjectId]("_id"),
       description = taskResult.getAs[String]("description").getOrElse(""),
       createdDate = taskResult.getAs[java.util.Date]("createdDate").get,
-      address = address,
+      address = Option(address),
       endDate = taskResult.getAs[java.util.Date]("endDate").getOrElse(new Date()),
       time = taskResult.getAs[String]("time").getOrElse(""),
       status = taskResult.getAs[String]("status").getOrElse(""),
@@ -89,7 +91,7 @@ trait TaskService extends Service {
       comments = comms,
       distance = distance,
       category = taskResult.getAs[String]("category"),
-      categoryId = taskResult.getAs[String]("category"),
+      categoryId = taskResult.getAs[String]("categoryId"),
       taskType = taskResult.getAs[String]("type").get,
       emailVerBudgetRequired = taskResult.getAs[Boolean]("emailVerBudgetRequired"),
       linkedInBudgetRequired = taskResult.getAs[Boolean]("linkedInBudgetRequired"),
@@ -113,7 +115,7 @@ trait TaskService extends Service {
 
     Bid(
 
-      createdDate = bid.getAs[Date]("created").getOrElse(new Date()),
+      createdDate = bid.getAs[Date]("created"),
       offeredValue = bid.getAs[String]("offeredValue").getOrElse("0"),
       incrementedValue = bid.getAs[String]("incrementedValue").getOrElse("0"),
       comment = bid.getAs[String]("comment").getOrElse("NOT FOUND"),
@@ -165,7 +167,7 @@ trait TaskService extends Service {
   }
 
   def findBids(taskId: String) = {
-    findTaskById(taskId).get.bids.get.sortWith(_.createdDate after _.createdDate)
+    findTaskById(taskId).get.bids.get.sortWith(_.createdDate.get after _.createdDate.get)
   }
 
   def createComment(comment: Comment, commentId: String) = {
@@ -213,6 +215,9 @@ trait TaskService extends Service {
   }
 
   def findTaskById(id: String): Option[Task] = {
+    if(!ObjectId.isValid(id))
+      return None
+
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
 
     val collection = MongoFactory.getCollection("task")
@@ -248,20 +253,21 @@ trait TaskService extends Service {
       "type" -> task.taskType,
       "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
       "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
-      "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
+      "twitterBudgetRequired" -> task.twitterBudgetRequired,
       "fbBudgetRequired" -> task.fbBudgetRequired,
       "secDocBudgetRequired" -> task.secDocBudgetRequired,
       "webcamBudgetRequired" -> task.webcamBudgetRequired,
+      "passportIdBudgetRequired" -> task.passportIdBudgetRequired,
 
       "address" -> MongoDBObject(
-        "city" -> task.address.city,
-        "country" -> task.address.country,
-        "postcode" -> task.address.postcode,
-        "regione" -> task.address.regione,
-        "address" -> task.address.address,
+        "city" -> task.address.get.city,
+        "country" -> task.address.get.country,
+        "postcode" -> task.address.get.postcode,
+        "regione" -> task.address.get.regione,
+        "address" -> task.address.get.address,
         "location" -> MongoDBObject(
-          "latitude" -> task.address.location.get.latitude,
-          "longitude" -> task.address.location.get.longitude
+          "latitude" -> task.address.get.location.get.latitude,
+          "longitude" -> task.address.get.location.get.longitude
         ))
 
     )
@@ -284,10 +290,12 @@ trait TaskService extends Service {
       "type" -> task.taskType,
       "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
       "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
-      "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
+      "twitterBudgetRequired" -> task.twitterBudgetRequired,
       "fbBudgetRequired" -> task.fbBudgetRequired,
       "secDocBudgetRequired" -> task.secDocBudgetRequired,
-      "webcamBudgetRequired" -> task.webcamBudgetRequired
+      "webcamBudgetRequired" -> task.webcamBudgetRequired,
+      "passportIdBudgetRequired" -> task.passportIdBudgetRequired
+
 
     )
     obj

@@ -83,7 +83,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     case FindBids(taskId: String) => {
 
       val task = findTaskById(taskId)
-      if (task.isDefined) httpRequestContext.complete(Bids(task.get.bids.get.sortWith(_.createdDate after _.createdDate)))
+      if (task.isDefined) httpRequestContext.complete(Bids(task.get.bids.get.sortWith(_.createdDate.get after _.createdDate.get)))
       else
         httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
 
@@ -117,32 +117,36 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
       val task = findTaskById(bid.taskId.get)
       if (!task.isDefined)
-        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
-      val betterBid = task.get.bids.get.filter(b => b.incrementedValue < bid.incrementedValue)
-      val bidId = "BID_" + (new Date()).getTime
-      val response = createBid(bid, bidId)
-      val sendAlertActor = createSendAlertActor(context)
-      if (betterBid.size > 0) {
-        //send notification normal bid
-        sendAlertActor ! new BidAlert(bid.taskId.get, bidId, language);
-      } else {
-        //send best bid notification
-        sendAlertActor ! new BetterBidCreatedAlert(bid.taskId.get, language);
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found") else {
+        val betterBid = task.get.bids.getOrElse(Seq()).filter(b => b.incrementedValue < bid.incrementedValue)
+        val bidId = "BID_" + (new Date()).getTime
+        val response = createBid(bid, bidId)
+        val sendAlertActor = createSendAlertActor(context)
+        if (betterBid.size > 0) {
+          //send notification normal bid
+          sendAlertActor ! new BidAlert(bid.taskId.get, bidId, language);
+        } else {
+          //send best bid notification
+          sendAlertActor ! new BetterBidCreatedAlert(bid.taskId.get, language);
+        }
+        httpRequestContext.complete(response)
       }
-      httpRequestContext.complete(response)
       context.stop(self)
     }
 
     case CreateComment(comment: Comment, language: String) => {
       log.info("Received request to create the  Comment :{}", comment)
       val task = findTaskById(comment.taskId)
-      if (!task.isDefined)
+      if (!task.isDefined)  {
         httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
-      val commentId = comment.taskId + "-" + findTaskById(comment.taskId).get.comments.size
-      val response = createComment(comment, commentId)
-      val sendAlertActor = createSendAlertActor(context)
-      sendAlertActor ! new CommentAddedAlert(comment.taskId, commentId, comment.userId, language, false);
-      httpRequestContext.complete(response)
+      } else {
+        val commentId = comment.taskId + "-" + findTaskById(comment.taskId).get.comments.size
+        val response = createComment(comment, commentId)
+        val sendAlertActor = createSendAlertActor(context)
+        sendAlertActor ! new CommentAddedAlert(comment.taskId, commentId, comment.userId, language, false);
+        httpRequestContext.complete(response)
+      }
+
       context.stop(self)
 
     }
@@ -168,7 +172,10 @@ object TaskServiceActor {
   case class FindComments(taskId: String)
   case class CreateBid(bid: Bid, language: String)
   case class CreateComment(comment: Comment, language: String)
-  case class FindTaskCategory(categoryType: Option[String])
+  case class FindTaskCategory(categoryType: Option[String]) {
+    require(!categoryType.isDefined
+    || categoryType.get == "ONLINE" || categoryType.get == "OFFLINE" || categoryType.get == "MT", "wrong value passed for type. The accepted ones are:ONLINE,OFFLINE and MT")
+  }
 
   def props(name: String) = Props(classOf[TaskServiceActor], name)
 

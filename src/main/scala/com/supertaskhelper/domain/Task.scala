@@ -17,7 +17,7 @@ import com.supertaskhelper.domain.search.Searchable
 
 case class Location(longitude: String, latitude: String)
 case class Bids(bids: Seq[Bid])
-case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String, sthId: String,
+case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue: String, sthId: String,
     sth: String, comment: String, taskId: Option[String], id: Option[String], status: Option[String]) {
 
   require(!incrementedValue.isEmpty, "incremented value cannot be empty")
@@ -27,35 +27,9 @@ case class Bid(createdDate: Date, offeredValue: String, incrementedValue: String
   require(!taskId.isEmpty, "taskId  cannot be empty")
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: String, regione: Option[String])
-/*
-  "emailVerBudgetRequired": true,
-    "endDate": {
-        "$date": "2013-10-15T18:30:00.000Z"
-    },
-    "fbBudgetRequired": true,
-    "hasPriceSuggested": false,
-    "linkedInBudgetRequired": false,
-    "locale": "it_IT",
-    "location": "Via di Vallerano, Roma, RM, Italia",
-    "passportIdBudgetRequired": true,
-    "postedDate": {
-        "$date": "2013-10-14T21:26:05.592Z"
-    },
-    "priceSuggested": "",
-    "secDocBudgetRequired": true,
-    "status": "CLOSED",
-    "taskHelperId": "525bac71e4b03f39e6aa5280",
-    "time": "18.30",
-    "title": "Ho bisogno di qualcuno che mi faccia la spesa",
-    "twitterBudgetRequired": false,
-    "type": "OFFLINE",
-    "userId": "525c5faee4b08b71eeafa599",
-    "userProfileImage": false,
-    "webcamBudgetRequired": false,
-    "withHire": false
- */
 
-case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String,
+
+case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
   bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
   categoryId: Option[String], taskType: String, emailVerBudgetRequired: Option[Boolean],
   fbBudgetRequired: Option[Boolean], linkedInBudgetRequired: Option[Boolean], passportIdBudgetRequired: Option[Boolean],

@@ -214,10 +214,10 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
             parameters(
-              'type.as[String].?) { otype =>
+              'type.as[String].?).as(FindTaskCategory) { findTaskCategory =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
-                  perRequestSearchingActor ! FindTaskCategory(otype)
+                  perRequestSearchingActor ! findTaskCategory
               }
           }
         }
