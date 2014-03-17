@@ -60,14 +60,17 @@ trait TaskService extends Service {
   private def buildTask(taskResult: DBObject, distance: Option[String]): Task = {
 
     val bidss: Option[Seq[Bid]] =
-      if(taskResult.get("bids").asInstanceOf[BasicDBList]!=null){Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
-      )} else None
+      if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
+        Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate after _.createdDate)
+        )
+      } else None
 
-        val comms: Option[Seq[Comment]] = if(taskResult.get("comments").asInstanceOf[BasicDBList]!=null) {
-        Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
-        )} else None
-     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
-    val locationObj = if(addobj!=null) addobj.get("location").asInstanceOf[BasicDBObject] else null
+    val comms: Option[Seq[Comment]] = if (taskResult.get("comments").asInstanceOf[BasicDBList] != null) {
+      Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
+      )
+    } else None
+    val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
+    val locationObj = if (addobj != null) addobj.get("location").asInstanceOf[BasicDBObject] else null
     val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
@@ -89,13 +92,12 @@ trait TaskService extends Service {
       categoryId = taskResult.getAs[String]("category"),
       taskType = taskResult.getAs[String]("type").get,
       emailVerBudgetRequired = taskResult.getAs[Boolean]("emailVerBudgetRequired"),
-      linkedInBudgetRequired =    taskResult.getAs[Boolean]("linkedInBudgetRequired"),
-      fbBudgetRequired =  taskResult.getAs[Boolean]("fbBudgetRequired"),
+      linkedInBudgetRequired = taskResult.getAs[Boolean]("linkedInBudgetRequired"),
+      fbBudgetRequired = taskResult.getAs[Boolean]("fbBudgetRequired"),
       passportIdBudgetRequired = taskResult.getAs[Boolean]("passportIdBudgetRequired"),
       twitterBudgetRequired = taskResult.getAs[Boolean]("twitterBudgetRequired"),
       secDocBudgetRequired = taskResult.getAs[Boolean]("secDocBudgetRequired"),
       webcamBudgetRequired = taskResult.getAs[Boolean]("webcamBudgetRequired")
-
 
     )
     task //return the task object
@@ -225,30 +227,30 @@ trait TaskService extends Service {
 
   def createTask(task: Task) = {
     val collection = MongoFactory.getCollection("task")
-    val doc = if(task.address!=null) buildMongodBObjTaskWithAddress(task) else buildMongodBObjTaskWithoutAddress(task)
+    val doc = if (task.address != null) buildMongodBObjTaskWithAddress(task) else buildMongodBObjTaskWithoutAddress(task)
     collection.save(doc)
 
     Response("Success", doc.getAs[org.bson.types.ObjectId]("_id").get.toString)
 
   }
-  private def buildMongodBObjTaskWithAddress(task:Task):MongoDBObject = {
-   val obj = MongoDBObject(
+  private def buildMongodBObjTaskWithAddress(task: Task): MongoDBObject = {
+    val obj = MongoDBObject(
 
       "createdDate" -> task.createdDate,
       "description" -> task.description,
       "title" -> task.title,
-      "endDate" ->task.endDate,
+      "endDate" -> task.endDate,
       "time" -> task.time,
       "userId" -> task.userId,
       "status" -> task.status,
       "category" -> task.category,
       "categoryId" -> task.categoryId,
       "type" -> task.taskType,
-      "emailVerBudgetRequired" ->task.emailVerBudgetRequired,
+      "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
       "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
       "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
       "fbBudgetRequired" -> task.fbBudgetRequired,
-      "secDocBudgetRequired" ->task.secDocBudgetRequired,
+      "secDocBudgetRequired" -> task.secDocBudgetRequired,
       "webcamBudgetRequired" -> task.webcamBudgetRequired,
 
       "address" -> MongoDBObject(
@@ -259,36 +261,33 @@ trait TaskService extends Service {
         "address" -> task.address.address,
         "location" -> MongoDBObject(
           "latitude" -> task.address.location.get.latitude,
-          "longitude" ->  task.address.location.get.longitude
+          "longitude" -> task.address.location.get.longitude
         ))
-
 
     )
 
     obj
   }
 
-  private def buildMongodBObjTaskWithoutAddress(task:Task) :MongoDBObject= {
-  val obj=  MongoDBObject(
+  private def buildMongodBObjTaskWithoutAddress(task: Task): MongoDBObject = {
+    val obj = MongoDBObject(
 
       "createdDate" -> task.createdDate,
       "description" -> task.description,
       "title" -> task.title,
-      "endDate" ->task.endDate,
+      "endDate" -> task.endDate,
       "time" -> task.time,
       "userId" -> task.userId,
       "status" -> task.status,
       "category" -> task.category,
       "categoryId" -> task.categoryId,
-    "type" -> task.taskType,
-    "emailVerBudgetRequired" ->task.emailVerBudgetRequired,
-    "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
-    "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
-    "fbBudgetRequired" -> task.fbBudgetRequired,
-    "secDocBudgetRequired" ->task.secDocBudgetRequired,
-    "webcamBudgetRequired" -> task.webcamBudgetRequired
-
-
+      "type" -> task.taskType,
+      "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
+      "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
+      "twttwitterBudgetRequiredi" -> task.twitterBudgetRequired,
+      "fbBudgetRequired" -> task.fbBudgetRequired,
+      "secDocBudgetRequired" -> task.secDocBudgetRequired,
+      "webcamBudgetRequired" -> task.webcamBudgetRequired
 
     )
     obj

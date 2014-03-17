@@ -57,9 +57,9 @@ case class Address(address: Option[String], city: Option[String], country: Strin
 
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Address, endDate: Date, time: String, status: String, userId: String,
   bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
-  categoryId: Option[String],taskType:String,emailVerBudgetRequired:Option[Boolean],
-  fbBudgetRequired:Option[Boolean],linkedInBudgetRequired:Option[Boolean],passportIdBudgetRequired:Option[Boolean],
-  secDocBudgetRequired:Option[Boolean],twitterBudgetRequired:Option[Boolean],webcamBudgetRequired:Option[Boolean] ) extends Searchable
+  categoryId: Option[String], taskType: String, emailVerBudgetRequired: Option[Boolean],
+  fbBudgetRequired: Option[Boolean], linkedInBudgetRequired: Option[Boolean], passportIdBudgetRequired: Option[Boolean],
+  secDocBudgetRequired: Option[Boolean], twitterBudgetRequired: Option[Boolean], webcamBudgetRequired: Option[Boolean]) extends Searchable
 
 case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String]) {
   require(!comment.isEmpty, "comment  cannot be empty")
