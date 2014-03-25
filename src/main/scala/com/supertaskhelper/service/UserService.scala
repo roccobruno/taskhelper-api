@@ -56,7 +56,7 @@ trait UserService extends Service {
         userName = userResult.getAs[String]("username").get,
         isSTH = userResult.getAs[Boolean]("STH").getOrElse(false),
         email = userResult.getAs[String]("email").get,
-        password = "NOT_VISIBLE",
+        password = userResult.getAs[String]("password").get,
         id = userResult.getAs[ObjectId]("_id").get.toString,
         imgUrl = Option("loadphoto/USER_" + userResult.getAs[ObjectId]("_id").get.toString),
         distance = None,
