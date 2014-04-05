@@ -215,7 +215,7 @@ trait TaskService extends Service {
   }
 
   def findTaskById(id: String): Option[Task] = {
-    if(!ObjectId.isValid(id))
+    if (!ObjectId.isValid(id))
       return None
 
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
@@ -295,7 +295,6 @@ trait TaskService extends Service {
       "secDocBudgetRequired" -> task.secDocBudgetRequired,
       "webcamBudgetRequired" -> task.webcamBudgetRequired,
       "passportIdBudgetRequired" -> task.passportIdBudgetRequired
-
 
     )
     obj

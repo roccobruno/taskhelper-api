@@ -25,9 +25,9 @@ case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue
   require(createdDate != null, "createdDate  cannot be empty")
   require(!sthId.isEmpty, "sthId  cannot be empty")
   require(!taskId.isEmpty, "taskId  cannot be empty")
+  require(ObjectId.isValid(taskId.get), "taskId provided not valid")
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: String, regione: Option[String])
-
 
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
   bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
@@ -41,6 +41,7 @@ case class Comment(id: Option[String], userId: String, userName: String, comment
   require(!userId.isEmpty, "userId  cannot be empty")
   require(!taskId.isEmpty, "taskId  cannot be empty")
   require(!userName.isEmpty, "userName  cannot be empty")
+  require(ObjectId.isValid(taskId), "taskId provided not valid")
 }
 
 case class Comments(comments: Seq[Comment])

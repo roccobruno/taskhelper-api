@@ -2,6 +2,7 @@ package com.supertaskhelper
 
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.DBObject
+import org.bson.types.ObjectId
 
 case class Customer(firstName: Some[Any], lastName: Some[Any], _id: Some[Any], phoneNumber: Some[Any], address: Some[Any],
   city: Some[Any], country: Some[Any],
@@ -19,7 +20,9 @@ class CustomerDal {
     id
   }
 
-  def findCustomer(id: String) = {
+  def findCustomer(id: String): Option[Customer] = {
+    if (!ObjectId.isValid(id))
+      return None
     var q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
     val collection = MongoFactory.getCollection(conn)
     val result = collection findOne q
@@ -35,7 +38,7 @@ class CustomerDal {
       country = Some(customerResult.get("country")),
       zipcode = Some(customerResult.get("zipcode")))
 
-    customer //return the customer object
+    Option(customer) //return the customer object
   }
 
   //Convert our Customer object into a BSON format that MongoDb can store.

@@ -83,8 +83,12 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     case FindBids(taskId: String) => {
 
       val task = findTaskById(taskId)
-      if (task.isDefined) httpRequestContext.complete(Bids(task.get.bids.get.sortWith(_.createdDate.get after _.createdDate.get)))
-      else
+      if (task.isDefined) {
+        val bids: Bids = if (task.get.bids.isDefined) Bids(task.get.bids.get.sortWith(_.createdDate.get after _.createdDate.get))
+        else Bids(Seq())
+        httpRequestContext.complete(bids)
+
+      } else
         httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
 
       context.stop(self)
@@ -92,8 +96,11 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
     case FindComments(taskId: String) => {
       val task = findTaskById(taskId)
-      if (task.isDefined) httpRequestContext.complete(Comments(task.get.comments.get.sortWith(_.dateCreated after _.dateCreated)))
-      else
+      if (task.isDefined) {
+        val comments: Comments = if (task.get.comments.isDefined) Comments(task.get.comments.get.sortWith(_.dateCreated after _.dateCreated))
+        else Comments(Seq())
+        httpRequestContext.complete(comments)
+      } else
         httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
       context.stop(self)
     }
@@ -117,7 +124,8 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
       val task = findTaskById(bid.taskId.get)
       if (!task.isDefined)
-        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found") else {
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
+      else {
         val betterBid = task.get.bids.getOrElse(Seq()).filter(b => b.incrementedValue < bid.incrementedValue)
         val bidId = "BID_" + (new Date()).getTime
         val response = createBid(bid, bidId)
@@ -137,7 +145,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     case CreateComment(comment: Comment, language: String) => {
       log.info("Received request to create the  Comment :{}", comment)
       val task = findTaskById(comment.taskId)
-      if (!task.isDefined)  {
+      if (!task.isDefined) {
         httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
       } else {
         val commentId = comment.taskId + "-" + findTaskById(comment.taskId).get.comments.size
@@ -174,7 +182,7 @@ object TaskServiceActor {
   case class CreateComment(comment: Comment, language: String)
   case class FindTaskCategory(categoryType: Option[String]) {
     require(!categoryType.isDefined
-    || categoryType.get == "ONLINE" || categoryType.get == "OFFLINE" || categoryType.get == "MT", "wrong value passed for type. The accepted ones are:ONLINE,OFFLINE and MT")
+      || categoryType.get == "ONLINE" || categoryType.get == "OFFLINE" || categoryType.get == "MT", "wrong value passed for type. The accepted ones are:ONLINE,OFFLINE and MT")
   }
 
   def props(name: String) = Props(classOf[TaskServiceActor], name)

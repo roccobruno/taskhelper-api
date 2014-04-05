@@ -42,11 +42,18 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
     }
 
     case s: UserSearchParams => {
-      val res = if (!s.email.isEmpty) findUserByEmail(s.email.get) else findUserById(s.id.get)
-      if (res._1)
-        ctx.complete(res._2)
-      else
-        ctx.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Not Found")
+      try {
+        val res = if (!s.email.isEmpty) findUserByEmail(s.email.get) else findUserById(s.id.get)
+
+        if (res._1)
+          ctx.complete(res._2)
+        else
+          ctx.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Not Found")
+      } catch {
+        case _ =>
+          log.warning("User NOT FOUND with params:{}", s)
+          ctx.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Not Found")
+      }
       context.stop(self)
     }
 

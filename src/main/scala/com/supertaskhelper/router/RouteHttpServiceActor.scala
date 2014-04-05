@@ -100,21 +100,28 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
   }
 
   def createEmailSentActor(ctx: RequestContext): ActorRef = {
-    actorRefFactory.actorOf(Props(classOf[EmailSentActor], ctx), "email-code-actor")
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[EmailSentActor], ctx), s"email-code-actor-${requestCount}")
   }
 
   def createConversationMessageActor(ctx: RequestContext): ActorRef = {
-    actorRefFactory.actorOf(Props(classOf[ConversationMessageActor], ctx), "conversation-message-code-actor")
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[ConversationMessageActor], ctx), s"conversation-message-code-actor-${requestCount}")
   }
   def createActivityActor(ctx: RequestContext): ActorRef = {
-    actorRefFactory.actorOf(Props(classOf[ActivityActor], ctx), "activity-code-actor")
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[ActivityActor], ctx), s"activity-code-actor-${requestCount}")
   }
 
-  def createPerUserActor(ctx: RequestContext): ActorRef =
-    actorRefFactory.actorOf(Props(classOf[UserServiceActor], ctx), "user-actor")
+  def createPerUserActor(ctx: RequestContext): ActorRef = {
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[UserServiceActor], ctx), s"user-actor-${requestCount}")
 
-  def createSearchActor(ctx: RequestContext): ActorRef = actorRefFactory.actorOf(Props(classOf[SearchActor], ctx), "search-actor")
-
+  }
+  def createSearchActor(ctx: RequestContext): ActorRef = {
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[SearchActor], ctx), s"search-actor-${requestCount}")
+  }
   val route: Route =
     pathPrefix("api") {
       path("status") {

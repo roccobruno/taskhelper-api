@@ -16,6 +16,8 @@ import java.util
 import com.typesafe.config.ConfigFactory
 import com.mongodb.BasicDBObject
 import com.mongodb.casbah.commons.TypeImports.BasicDBObject
+import org.bson.types.ObjectId
+import com.mongodb.casbah.commons.TypeImports.ObjectId
 
 /**
  * Created with IntelliJ IDEA.
@@ -77,7 +79,8 @@ trait UserService extends Service {
   }
 
   def findUserById(id: String): (Boolean, User) = {
-
+    if (!ObjectId.isValid(id))
+      (false, null)
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
     val collection = MongoFactory.getCollection("user")
     getUser(collection, q)
