@@ -2,6 +2,7 @@ package com.supertaskhelper
 
 import com.mongodb.casbah._
 import com.mongodb.ServerAddress
+import com.typesafe.config.ConfigFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,31 +16,22 @@ class MongodbUtil {
 }
 
 object MongoFactory {
-  private val SERVER = "localhost"
-  private val PORT = 27017
-  private val DATABASE = "tuttofare"
+  private val SERVER = ConfigFactory.load().getString("api-sth.database.mongodb-host")
+  private val PORT = ConfigFactory.load().getInt("api-sth.database.mongodb-port")
+  private val DATABASE = ConfigFactory.load().getString("api-sth.database.mongodb-db")
+  private val USERNAME = ConfigFactory.load().getString("api-sth.database.mongodb-username")
+  private val PASSWORD = ConfigFactory.load().getString("api-sth.database.mongodb-password")
   private val COLLECTION = "task"
 
   def getConnection: MongoConnection = return MongoConnection(SERVER)
   def getCollection(conn: MongoConnection): MongoCollection = return conn(DATABASE)(COLLECTION)
   def closeConnection(conn: MongoConnection) { conn.close }
 
-  //  val mongolabUri = System.getProperty("MONGOLAB_URI")
-  val mongodbName = System.getProperty("MONGODB_NAME")
-  val mongolabUri = "mongodb://taskhelper:taskhelper@ds057528.mongolab.com:57528"
-
-  System.out.println("URI:" + mongolabUri)
-  System.out.println("Name:" + mongodbName)
-
-  val uri = if (mongolabUri != null && !mongolabUri.isEmpty) MongoClientURI(mongolabUri) else MongoClientURI("mongodb://localhost:27017")
-
-  val server = new ServerAddress("ds057528.mongolab.com", 57528)
-  //  val server = new ServerAddress(SERVER, PORT)
-  val credential = MongoCredential("taskhelper", "tuttofare", "taskhelper".toCharArray)
+  val server = new ServerAddress(SERVER, PORT)
+  val credential = MongoCredential(USERNAME, DATABASE, PASSWORD.toCharArray)
   val mongoClient = MongoClient(server, List(credential))
-  //  val mongoClient = MongoClient(server)
 
-  def getDB = if (mongodbName != null && !mongodbName.isEmpty) mongoClient(mongodbName) else mongoClient("tuttofare")
+  def getDB = mongoClient(DATABASE)
 
   def getCollection(collName: String) = getDB(collName)
 

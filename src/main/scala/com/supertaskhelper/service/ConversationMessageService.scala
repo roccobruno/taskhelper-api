@@ -40,6 +40,28 @@ trait ConversationMessageService extends UserService {
 
   }
 
+  def deleteMessage(id:String) {
+    var collection = MongoFactory.getCollection("message")
+    val query = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+    collection remove (query)
+  }
+
+  def deleteConversation(id:String) {
+    var collection = MongoFactory.getCollection("conversation")
+    val query = MongoDBObject("_id" -> id)
+    collection remove (query)
+  }
+
+  def findMessageById(id:String):Option[Message] = {
+    var collection = MongoFactory.getCollection("message")
+    val query = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+    val res = collection findOne(query)
+    if(res.isDefined)
+     Option(buildMessage(res.get))
+    else
+      None
+  }
+
   private def buildConversation(convers: DBObject): Conversation = {
 
     Conversation(
@@ -92,22 +114,22 @@ trait ConversationMessageService extends UserService {
 
       val query = MongoDBObject("_id" -> conversationId)
 
-      collectionConv update (query, $addToSet("accessibleBy" -> message.message.toUserId))
+      collectionConv update (query, $addToSet("accessibleBy" -> dbmessage.getAs[String]("toUserId").get))
       collectionConv update (query, $set("lastUpdate" -> new Date()))
     } else {
       //craete conversation objectd
-      collectionConv save buildDBObjectConversation(message.message, conversationId)
+      collectionConv save buildDBObjectConversation(message.message, conversationId,dbmessage.getAs[String]("toUserId").get)
     }
 
     dbmessage.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
-  private def buildDBObjectConversation(message: Message, conversationId: String): MongoDBObject = {
+  private def buildDBObjectConversation(message: Message, conversationId: String,toUserId:String): MongoDBObject = {
     val obj = MongoDBObject(
       "_id" -> conversationId,
       "lastUpdate" -> new Date(),
       "topic" -> message.subject,
-      "accessibleBy" -> Seq(message.toUserId)
+      "accessibleBy" -> Seq(toUserId)
     )
     obj
   }
@@ -124,7 +146,7 @@ trait ConversationMessageService extends UserService {
     }
 
     val userToDbObject: (Boolean, User) =
-      if (!message.fromEmail.isDefined)
+      if (!message.toEmail.isDefined)
         findUserById(message.toUserId.get)
       else findUserByEmail(message.toEmail.get)
 

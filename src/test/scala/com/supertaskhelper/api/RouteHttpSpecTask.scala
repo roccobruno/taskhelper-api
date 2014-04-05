@@ -3,7 +3,7 @@ package com.supertaskhelper.api
 import org.scalatest.{ Matchers, WordSpecLike }
 import spray.testkit.ScalatestRouteTest
 import concurrent.duration._
-import com.supertaskhelper.router.RouteHttpService
+
 import org.scalatest.Matchers._
 import spray.http.StatusCodes
 import com.supertaskhelper.domain._
@@ -17,7 +17,8 @@ import com.supertaskhelper.domain.Location
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.TaskJsonFormat._
-import spray.routing.ValidationRejection
+import spray.routing.{MalformedQueryParamRejection, ValidationRejection}
+import com.supertaskhelper.router.RouteHttpService
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,7 +27,7 @@ import spray.routing.ValidationRejection
  * Time: 16:40
  * To change this template use File | Settings | File Templates.
  */
-class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService {
+class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService {
 
   implicit val routeTestTimeout = RouteTestTimeout(5 seconds)
 
@@ -47,7 +48,7 @@ class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest with Matchers w
 
     var taskId: Option[String] = None
 
-    "return the status message" in new RouteHttpSpec {
+    "return the status message" in new RouteHttpSpecTask {
       Get("/api/status") ~> route ~> check {
         responseAs[String] should include("\"status\": \"API-STH is running\"")
       }
@@ -68,8 +69,14 @@ class RouteHttpSpec extends WordSpecLike with ScalatestRouteTest with Matchers w
         status should be(StatusCodes.OK)
       }
 
-      val comment2 = Comment(None,"52515bb0e4b094388a43ca39","rocco","API test comment",new Date(),"sdsdsdsdsdsd",
+      val comment2 = Comment(None,"52515bb0e4b094388a43ca39","rocco","API test comment",new Date(),"52515bb0e5b094388a43ca39",
         None)
+
+//      Post("/api/tasks/comments",comment2) ~> route ~> check {
+//        assert(rejections.size ==1)
+//        assert(rejections(0).isInstanceOf[MalformedQueryParamRejection])
+//        assert(rejections(0).asInstanceOf[MalformedQueryParamRejection].parameterName == "customerId")
+//      }
 
       Post("/api/tasks/comments",comment2) ~> route ~> check {
         status should be(StatusCodes.NotFound)

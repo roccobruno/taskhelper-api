@@ -17,6 +17,7 @@ import java.util.Date
 import com.supertaskhelper.common.enums.COMMENT_STATUS
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
+import com.supertaskhelper.util.ConverterUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -25,7 +26,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService extends Service {
+trait TaskService extends Service with ConverterUtil {
 
   val conn = MongoFactory.getConnection
 
@@ -259,16 +260,7 @@ trait TaskService extends Service {
       "webcamBudgetRequired" -> task.webcamBudgetRequired,
       "passportIdBudgetRequired" -> task.passportIdBudgetRequired,
 
-      "address" -> MongoDBObject(
-        "city" -> task.address.get.city,
-        "country" -> task.address.get.country,
-        "postcode" -> task.address.get.postcode,
-        "regione" -> task.address.get.regione,
-        "address" -> task.address.get.address,
-        "location" -> MongoDBObject(
-          "latitude" -> task.address.get.location.get.latitude,
-          "longitude" -> task.address.get.location.get.longitude
-        ))
+      "address" -> getMongoDBObjFromAddress(task.address.get)
 
     )
 

@@ -53,7 +53,7 @@ class ConversationMessageActor(ctx: RequestContext) extends Actor with ActorLogg
       val sendAlertActor = createSendAlertActor(context)
       sendAlertActor ! new EmailAlert(messageId, c.language)
       //complete
-      ctx.complete(Response("Success", "1"))
+      ctx.complete(Response("Success", messageId))
       context.stop(self)
     }
 

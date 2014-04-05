@@ -4,12 +4,11 @@ import akka.actor.{ Props, ActorLogging, Actor }
 import com.supertaskhelper.util.ActorFactory
 import akka.event.LoggingReceive
 
-import com.supertaskhelper.service.UserServiceActor.CreateUser
+import com.supertaskhelper.service.UserServiceActor.{ DeleteUser, CreateUser }
 import com.supertaskhelper.common.domain.Password
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 
-import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
 import com.supertaskhelper.domain.ResponseJsonFormat._
@@ -19,6 +18,7 @@ import com.supertaskhelper.domain.{ Response, LocaleLanguage, UserRegistration }
 import com.supertaskhelper.common.jms.alerts.ConfirmationEmailAlert
 import com.supertaskhelper.common.enums.SOURCE
 import spray.http.StatusCodes
+import org.bson.types.ObjectId
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,10 +33,10 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
 
     case CreateUser(user: UserRegistration, language: String) => {
 
-      saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
+      val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
       val alertActor = createSendAlertActor(context)
       alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language, SOURCE.valueOf(user.source.get))
-      ctx.complete(Response("Resource Added", 200.toString))
+      ctx.complete(Response("Resource Added", id))
       context.stop(self)
 
     }
@@ -57,13 +57,23 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
       context.stop(self)
     }
 
+    case s: DeleteUser => {
+
+      deleteUser(s.id)
+      ctx.complete(Response("Success", s.id))
+      context.stop(self)
+    }
+
   }
 }
 
 object UserServiceActor {
 
   case class FindUser(id: String)
-  case class DeleteUser(id: Int)
+  case class DeleteUser(id: String) {
+    require(!id.isEmpty, "id is mandatory")
+    require(ObjectId.isValid(id), "id provided not valid")
+  }
   case class CreateUser(user: UserRegistration, language: String)
 
   def props(name: String) = Props(classOf[UserServiceActor], name)

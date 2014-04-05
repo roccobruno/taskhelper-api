@@ -28,6 +28,20 @@ import spray.http.StatusCodes
  */
 trait EmailSentService {
   val collection = MongoFactory.getCollection("emailSent")
+
+  def getCodeFromEmail(email:String):Option[String] = {
+    val q = MongoDBObject("email" -> email)
+    val res = collection findOne q
+    res.get.getAs[String]("_id")
+  }
+
+
+  def removeCodeEmail(email:String) {
+    val q = MongoDBObject("email" -> email)
+    collection remove q
+  }
+
+
   def generateEmailCode(email: String): String = {
 
     var objectToadd = MongoDBObject(
@@ -38,25 +52,30 @@ trait EmailSentService {
     objectToadd._id.get.toString
   }
 
-  def verifyCode(code: String): (Boolean, Int) = {
+  def getEmailSentRecordById(id:String):Option[DBObject] ={
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+    val res = collection findOne q
+    res
+  }
+
+
+
+  def verifyCode(codeObj: Option[DBObject]): (Boolean, Int) = {
+    var result:(Boolean, Int) = (false, ERROR_CODE.CODE_NOT_EXISTING)
     try {
-      val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(code))
-
-      val res = collection findOne q
-
-      if (res != None) {
-        val codeEm = res.get
+      if (codeObj != None) {
+        val codeEm = codeObj.get
         val valid = isValidCode(codeEm.getAs[Date]("createdDate").get)
         if (valid)
-          (true, 200)
+          result = (true, 200)
         else
-          (false, ERROR_CODE.CODE_EXPIRED)
+          result = (false, ERROR_CODE.CODE_EXPIRED)
       } else
-        (false, ERROR_CODE.CODE_NOT_EXISTING)
+        result =  (false, ERROR_CODE.CODE_NOT_EXISTING)
     } catch {
       case _: Throwable => {}
     }
-    (false, ERROR_CODE.CODE_NOT_EXISTING)
+     result
   }
 
   private def isValidCode(date: Date): Boolean = {
@@ -69,21 +88,32 @@ trait EmailSentService {
 
 }
 
-class EmailSentActor(ctx: RequestContext) extends Actor with ActorLogging with EmailSentService {
+class EmailSentActor(ctx: RequestContext) extends Actor with ActorLogging with EmailSentService with UserService {
   val timeout = Duration(context.system.settings.config.getMilliseconds("api-sth.per-request-actor.timeout"), MILLISECONDS)
   context.setReceiveTimeout(timeout)
 
   def receive = LoggingReceive {
 
     case c: Code => {
-      val res = verifyCode(c.code)
-      if (res._1)
-        ctx.complete(Response("code verified", 200.toString))
-      else
+      val codeRecord = getEmailSentRecordById(c.code)
+      if(codeRecord.isDefined) {
+        val res = verifyCode(codeRecord)
+        if (res._1) {
+          val email = codeRecord.get.getAs[String]("email").get
+          activateAccount(email)
+          ctx.complete(Response("code verified", 200.toString))
+        }
+        else
+          ctx.complete(StatusCodes.BadRequest, "Code not valid")
+      }else {
         ctx.complete(StatusCodes.BadRequest, "Code not valid")
+      }
 
-      context.stop(self)
+
+
+
     }
+      context.stop(self)
 
     case _ => {}
 

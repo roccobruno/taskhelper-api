@@ -13,44 +13,21 @@ import com.supertaskhelper.domain.StatusJsonFormat._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 
-import com.supertaskhelper.security.UserLoginJsonFormat._
+import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.service._
 import com.supertaskhelper.service.TaskServiceActor._
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.domain.search._
 import com.supertaskhelper.security.{ Logout, LoginActor, UserLogin, UserAuthentication }
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.domain.search.UserSearchParamsJsonFormat._
+import com.supertaskhelper.service.UserServiceActor._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-import spray.routing.RequestContext
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import spray.routing.RequestContext
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import spray.routing.RequestContext
-import com.supertaskhelper.service.Code
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.Status
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import com.supertaskhelper.domain.TaskParamsFormat._
-import com.supertaskhelper.domain.MessagesJsonFormat._
-import com.supertaskhelper.domain.ConversationsJsonFormat._
-import com.supertaskhelper.domain.ConversationParams
-import com.supertaskhelper.domain.Response
-import spray.routing.RequestContext
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.domain.Bid
-import com.supertaskhelper.service.Code
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.Status
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.domain.MessageJsonFormat._
+import com.supertaskhelper.security.UserTokensonFormat._
+
 import com.supertaskhelper.service.actors.ActivityActor
+
 import com.supertaskhelper.domain.ConversationParams
 import com.supertaskhelper.domain.Response
 import com.supertaskhelper.domain.search.UserSearchParams
@@ -59,6 +36,7 @@ import spray.routing.RequestContext
 import com.supertaskhelper.domain.Message
 import com.supertaskhelper.service.TaskServiceActor.FindBids
 import com.supertaskhelper.service.CreateMessage
+import com.supertaskhelper.service.TaskServiceActor.FindTaskCategory
 import com.supertaskhelper.domain.TaskParams
 import com.supertaskhelper.domain.search.SearchParams
 import com.supertaskhelper.service.TaskServiceActor.FindComments
@@ -69,6 +47,7 @@ import com.supertaskhelper.service.UserServiceActor.CreateUser
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
 import com.supertaskhelper.service.TaskServiceActor.CreateComment
 import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.domain.search.ActivityParams
 import com.supertaskhelper.domain.UserRegistration
 import com.supertaskhelper.domain.Status
 import com.supertaskhelper.domain.Task
@@ -177,6 +156,17 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
                 ctx => val perRequestSearchingActor = createPerUserActor(ctx)
                 perRequestSearchingActor ! CreateUser(user, "it")
 
+              }
+            }
+          } ~
+          delete {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              authenticate(authenticateUser) { user =>
+                parameters('id.as[String]) { id =>
+                  ctx =>
+                    val perRequestSearchingActor = createPerUserActor(ctx)
+                    perRequestSearchingActor ! DeleteUser(id)
+                }
               }
             }
           }

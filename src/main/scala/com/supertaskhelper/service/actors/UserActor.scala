@@ -45,7 +45,8 @@ class UserActor extends Actor with ActorLogging with UserService {
       securityDocVerified = u.securityDocVerified,
       webcamVerified = u.webcamVerified,
       emailVerified = u.emailVerified,
-      idDocVerified = u.idDocVerified
+      idDocVerified = u.idDocVerified,
+      accountStatus = u.accountStatus
 
     )
 

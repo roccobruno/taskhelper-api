@@ -125,16 +125,16 @@ import DefaultJsonProtocol._
 case class User(userName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
   distance: Option[String], address: Option[Address], bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
-  webcamVerified: Option[Boolean])
+  webcamVerified: Option[Boolean], accountStatus: Option[String])
     extends Searchable
 object UserJsonFormat extends DefaultJsonProtocol {
   implicit val locationFormat = jsonFormat2(Location)
   implicit val addressFormat = jsonFormat6(Address)
-  implicit val userFormat = jsonFormat16(User)
+  implicit val userFormat = jsonFormat17(User)
 }
 
 case class UserRegistration(userName: String, password: String, confirmPassword: String, email: String,
-    language: Option[Locale], source: Option[String]) {
+    language: Option[Locale], source: Option[String], address: Option[Address]) {
 
   require(!userName.isEmpty, "username must not be empty")
   require(!email.isEmpty, "email must not be empty")
@@ -142,6 +142,7 @@ case class UserRegistration(userName: String, password: String, confirmPassword:
   require(!confirmPassword.isEmpty, "confirmPassword must not be empty")
   require(password == confirmPassword, "password and confirmpassword must be equals")
   require(source.isEmpty || SOURCE.valueOf(source.get) != null, "source value not recognized")
+  require(address.isEmpty || (address.get.location.isDefined), "Address must have a geolocation")
 
 }
 
@@ -166,5 +167,7 @@ object UserRegistrationJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Locale expected")
     }
   }
-  implicit val userRegistrationFormat = jsonFormat6(UserRegistration)
+  implicit val locationFormat = jsonFormat2(Location)
+  implicit val addressFormat = jsonFormat6(Address)
+  implicit val userRegistrationFormat = jsonFormat7(UserRegistration)
 }

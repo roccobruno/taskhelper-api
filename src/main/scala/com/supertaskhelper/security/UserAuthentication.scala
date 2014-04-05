@@ -20,7 +20,7 @@ object UserJsonFormat extends DefaultJsonProtocol {
 
 case class UserLogin(userName: String, password: String)
 
-object UserLoginJsonFormat extends DefaultJsonProtocol {
+object UserTokensonFormat extends DefaultJsonProtocol {
   implicit val userLoginFormat = jsonFormat2(UserToken)
 }
 
@@ -51,8 +51,8 @@ trait UserAuthentication extends UserService {
 
           val user = findUserByEmail(usr)
 
-          Either.cond(user._1 && usr == user._2.email && Password.check(pwd, user._2.password),
-            UserToken(userName = usr, token = createToken(user._2.email)),
+          Either.cond(user._1 && usr == user._2.email && Password.check(pwd, user._2.password) && user._2.accountStatus.get == "ACTIVE",
+            UserToken(userName = user._2.userName, token = createToken(user._2.email)),
             AuthenticationFailedRejection(AuthenticationFailedRejection.CredentialsRejected, List(HttpHeaders.`WWW-Authenticate`(HttpChallenge("", "")))))
         }
       }

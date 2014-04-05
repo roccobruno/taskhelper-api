@@ -18,6 +18,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
+import com.supertaskhelper.util.ConverterUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,7 +28,7 @@ import com.mongodb.casbah.commons.TypeImports.ObjectId
  * To change this template use File | Settings | File Templates.
  */
 
-trait UserService extends Service {
+trait UserService extends Service with ConverterUtil {
 
   /**
    * finds a user by username
@@ -39,6 +40,21 @@ trait UserService extends Service {
     val collection = MongoFactory.getCollection("user")
     getUser(collection, q)
 
+  }
+
+  def activateAccount(email:String) {
+    val update = MongoDBObject(
+      "$set" -> MongoDBObject("accountStatus" -> ACCOUNT_STATUS.ACTIVE.toString)
+    )
+    val collection = MongoFactory.getCollection("user")
+    val q = MongoDBObject("email" -> email)
+    collection update(q,update)
+  }
+
+  def deleteUser(id: String) = {
+    val collection = MongoFactory.getCollection("user")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
+    collection remove q
   }
 
   private def getUser(collection: MongoCollection, query: MongoDBObject) = {
@@ -70,7 +86,8 @@ trait UserService extends Service {
         securityDocVerified = userResult.getAs[Boolean]("securityDocVerified"),
         webcamVerified = userResult.getAs[Boolean]("webcamVerified"),
         emailVerified = userResult.getAs[Boolean]("emailVerified"),
-        idDocVerified = userResult.getAs[Boolean]("idDocVerified")
+        idDocVerified = userResult.getAs[Boolean]("idDocVerified"),
+        accountStatus = userResult.getAs[String]("accountStatus")
 
       )
       (true, user)
@@ -151,20 +168,22 @@ trait UserService extends Service {
       (false, userToken)
   }
 
-  def saveUser(registrationUser: UserRegistration, locale: Locale) {
+  def saveUser(registrationUser: UserRegistration, locale: Locale): String = {
     val collection = MongoFactory.getCollection("user")
-    collection.save(MongoDBObject(
+    val userDoc = MongoDBObject(
       "username" -> registrationUser.userName,
       "firstName" -> registrationUser.userName,
       "isSTH" -> false,
       "email" -> registrationUser.email,
       "password" -> Password.getSaltedHash(registrationUser.password),
-      "accountStatus" -> ACCOUNT_STATUS.ACTIVE.toString,
+      "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
       "withAccount" -> true,
       "accountCreatedDate" -> new Date(),
-      "preferredLanguage" -> locale.toString
-    ))
-
+      "preferredLanguage" -> locale.toString,
+      "address" -> getMongoDBObjFromAddress(registrationUser.address.get)
+    )
+    collection.save(userDoc)
+    userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
   def updateTimeToken(token: UserToken) = {
