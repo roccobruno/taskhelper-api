@@ -40,24 +40,24 @@ trait ConversationMessageService extends UserService {
 
   }
 
-  def deleteMessage(id:String) {
+  def deleteMessage(id: String) {
     var collection = MongoFactory.getCollection("message")
     val query = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
     collection remove (query)
   }
 
-  def deleteConversation(id:String) {
+  def deleteConversation(id: String) {
     var collection = MongoFactory.getCollection("conversation")
     val query = MongoDBObject("_id" -> id)
     collection remove (query)
   }
 
-  def findMessageById(id:String):Option[Message] = {
+  def findMessageById(id: String): Option[Message] = {
     var collection = MongoFactory.getCollection("message")
     val query = MongoDBObject("_id" -> new org.bson.types.ObjectId(id))
-    val res = collection findOne(query)
-    if(res.isDefined)
-     Option(buildMessage(res.get))
+    val res = collection findOne (query)
+    if (res.isDefined)
+      Option(buildMessage(res.get))
     else
       None
   }
@@ -118,13 +118,13 @@ trait ConversationMessageService extends UserService {
       collectionConv update (query, $set("lastUpdate" -> new Date()))
     } else {
       //craete conversation objectd
-      collectionConv save buildDBObjectConversation(message.message, conversationId,dbmessage.getAs[String]("toUserId").get)
+      collectionConv save buildDBObjectConversation(message.message, conversationId, dbmessage.getAs[String]("toUserId").get)
     }
 
     dbmessage.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
-  private def buildDBObjectConversation(message: Message, conversationId: String,toUserId:String): MongoDBObject = {
+  private def buildDBObjectConversation(message: Message, conversationId: String, toUserId: String): MongoDBObject = {
     val obj = MongoDBObject(
       "_id" -> conversationId,
       "lastUpdate" -> new Date(),

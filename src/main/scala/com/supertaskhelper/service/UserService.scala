@@ -42,13 +42,13 @@ trait UserService extends Service with ConverterUtil {
 
   }
 
-  def activateAccount(email:String) {
+  def activateAccount(email: String) {
     val update = MongoDBObject(
       "$set" -> MongoDBObject("accountStatus" -> ACCOUNT_STATUS.ACTIVE.toString)
     )
     val collection = MongoFactory.getCollection("user")
     val q = MongoDBObject("email" -> email)
-    collection update(q,update)
+    collection update (q, update)
   }
 
   def deleteUser(id: String) = {
