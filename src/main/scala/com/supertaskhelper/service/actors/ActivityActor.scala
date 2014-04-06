@@ -8,6 +8,7 @@ import com.supertaskhelper.domain.search.ActivityParams
 import spray.routing.RequestContext
 import spray.httpx.SprayJsonSupport._
 import com.supertaskhelper.domain.ActivitiesJsonFormat._
+import com.supertaskhelper.domain.Activities
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,7 +20,7 @@ import com.supertaskhelper.domain.ActivitiesJsonFormat._
 class ActivityActor(httpContext: RequestContext) extends Actor with ActorLogging with ActorFactory with ActivityService {
   def receive = LoggingReceive {
     case params: ActivityParams => {
-      httpContext.complete(findLastActivities(params))
+      httpContext.complete(Activities(findLastActivities(params)))
       context.stop(self)
     }
 

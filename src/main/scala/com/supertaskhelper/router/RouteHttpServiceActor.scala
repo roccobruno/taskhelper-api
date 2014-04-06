@@ -298,6 +298,14 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
 
               }
             }
+          } ~ delete {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              parameters('id.as[String],
+                'userId.as[String].?).as(DeleteConversation) { dltC =>
+                  ctx => val perRequestSearchingActor = createConversationMessageActor(ctx)
+                  perRequestSearchingActor ! dltC
+                }
+            }
           }
       } ~ path("activities") {
         get {

@@ -39,6 +39,11 @@ trait ConversationMessageService extends UserService {
     res
 
   }
+  def deleteUserFromConversation(conversationId: String, userId: String) = {
+    var collection = MongoFactory.getCollection("conversation")
+    var query = MongoDBObject("_id" -> conversationId)
+    collection update (query, $pull("accessibleBy" -> userId))
+  }
 
   def deleteMessage(id: String) {
     var collection = MongoFactory.getCollection("message")

@@ -57,6 +57,12 @@ class ConversationMessageActor(ctx: RequestContext) extends Actor with ActorLogg
       context.stop(self)
     }
 
+    case c: DeleteConversation => {
+      deleteUserFromConversation(c.id, c.userId)
+      ctx.complete(Response("Success", "1"))
+      context.stop(self)
+    }
+
     case message @ _ =>
       log.warning(s"Unknown message received by ConversationMessageActor: ${message}")
 
@@ -65,3 +71,4 @@ class ConversationMessageActor(ctx: RequestContext) extends Actor with ActorLogg
 }
 
 case class CreateMessage(message: Message, language: String)
+case class DeleteConversation(id: String, userId: String)

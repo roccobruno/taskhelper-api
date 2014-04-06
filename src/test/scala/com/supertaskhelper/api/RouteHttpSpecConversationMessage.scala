@@ -94,6 +94,27 @@ class RouteHttpSpecConversationMessage extends WordSpecLike with ScalatestRouteT
         assert(mgsIds.contains(responseAs[Messages].messages(0).id.get))
 
       }
+
+
+      Delete("/api/conversation?id="+messageSaved.get.conversationId.get+"&userId=53403845036496d20080c280") ~> route ~>check {
+        status should be(StatusCodes.OK)
+      }
+      //after deletion of a user I check that the conversation has been updated
+      Get("/api/conversation?userId="+"53403845036496d20080c279") ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Conversations].convs.isEmpty == false)
+        assert(responseAs[Conversations].convs.size == 1)
+        assert(!responseAs[Conversations].convs(0).users.get.contains("53403845036496d20080c280"))
+        assert(responseAs[Conversations].convs(0).users.size == 1)
+      }
+
+      Get("/api/conversation?userId="+"53403845036496d20080c280") ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Conversations].convs.isEmpty == true)
+      }
+
+
+
       mgsIds.foreach(x => deleteMessage(x))
 
       deleteConversation(messageSaved.get.conversationId.get)
