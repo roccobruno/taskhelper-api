@@ -170,20 +170,36 @@ trait UserService extends Service with ConverterUtil {
 
   def saveUser(registrationUser: UserRegistration, locale: Locale): String = {
     val collection = MongoFactory.getCollection("user")
-    val userDoc = MongoDBObject(
-      "username" -> registrationUser.userName,
-      "firstName" -> registrationUser.userName,
-      "isSTH" -> false,
-      "email" -> registrationUser.email,
-      "password" -> Password.getSaltedHash(registrationUser.password),
-      "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
-      "withAccount" -> true,
-      "accountCreatedDate" -> new Date(),
-      "preferredLanguage" -> locale.toString,
-      "address" -> getMongoDBObjFromAddress(registrationUser.address.get)
-    )
+    val userDoc =  getUserMongoDBObject(registrationUser,locale)
     collection.save(userDoc)
     userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString
+  }
+
+  def getUserMongoDBObject(registrationUser:UserRegistration,locale:Locale):MongoDBObject = {
+    if(registrationUser.address.isDefined) {
+      MongoDBObject(
+        "username" -> registrationUser.userName,
+        "firstName" -> registrationUser.userName,
+        "isSTH" -> false,
+        "email" -> registrationUser.email,
+        "password" -> Password.getSaltedHash(registrationUser.password),
+        "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
+        "withAccount" -> true,
+        "accountCreatedDate" -> new Date(),
+        "preferredLanguage" -> locale.toString,
+        "address" -> getMongoDBObjFromAddress(registrationUser.address.get))
+    } else {
+      MongoDBObject(
+        "username" -> registrationUser.userName,
+        "firstName" -> registrationUser.userName,
+        "isSTH" -> false,
+        "email" -> registrationUser.email,
+        "password" -> Password.getSaltedHash(registrationUser.password),
+        "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
+        "withAccount" -> true,
+        "accountCreatedDate" -> new Date(),
+        "preferredLanguage" -> locale.toString)
+    }
   }
 
   def updateTimeToken(token: UserToken) = {

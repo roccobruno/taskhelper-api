@@ -82,7 +82,14 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
 
      }
 
-      Get("/api/users?email=test_rocco@msn.com") ~> route ~> check {
+
+
+
+
+
+
+
+        Get("/api/users?email=test_rocco@msn.com") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[User].id == userId.get)
         assert(responseAs[User].email == "test_rocco@msn.com")
@@ -113,6 +120,30 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       Delete("/api/users?id="+userId.get+"&email=test_rocco_login@msn.com&token="+token) ~> route ~> check {
         status should be(StatusCodes.OK)
       }
+
+      val userReg2 = UserRegistration("test_rocco","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
+
+      Post("/api/users",userReg2) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Resource Added"))
+        userId = Option(responseAs[Response].id)
+      }
+
+      Get("/api/users?id="+userId.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[User].id == userId.get)
+        assert(responseAs[User].email == "test_rocco@msn.com")
+        assert(responseAs[User].userName == "test_rocco")
+        assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
+        assert(responseAs[User].imgUrl.get == "loadphoto/USER_"+userId.get)
+        assert(!responseAs[User].address.isDefined)
+
+
+      }
+      Delete("/api/users?id="+userId.get+"&email=test_rocco_login@msn.com&token="+token) ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+
     }
 
     "should return a token when user logins in" in new RouteHttpSpecUsers {

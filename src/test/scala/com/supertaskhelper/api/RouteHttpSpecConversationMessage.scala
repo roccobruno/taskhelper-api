@@ -67,24 +67,24 @@ class RouteHttpSpecConversationMessage extends WordSpecLike with ScalatestRouteT
 
 
 
-      Get("/api/conversation?userId="+"53403845036496d20080c280") ~> route ~> check {
+      Get("/api/conversation?userId="+"5383766d036457876c3dc24f") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Conversations].convs.isEmpty == false)
         assert(responseAs[Conversations].convs.size == 1)
         assert(responseAs[Conversations].convs(0).id == messageSaved.get.conversationId.get)
         assert(responseAs[Conversations].convs(0).topic.get  == "Test message")
-        assert(responseAs[Conversations].convs(0).users.get.contains("53403845036496d20080c280"))
-        assert(responseAs[Conversations].convs(0).users.get.contains("53403845036496d20080c279"))
+        assert(responseAs[Conversations].convs(0).users.get.contains("5383766d036457876c3dc24f"))
+        assert(responseAs[Conversations].convs(0).users.get.contains("5383735e03641e76a78bded1"))
       }
 
 
-      Get("/api/conversation?userId="+"53403845036496d20080c279") ~> route ~> check {
+      Get("/api/conversation?userId="+"5383735e03641e76a78bded1") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Conversations].convs.isEmpty == false)
         assert(responseAs[Conversations].convs.size == 1)
         assert(responseAs[Conversations].convs(0).id == messageSaved.get.conversationId.get)
         assert(responseAs[Conversations].convs(0).topic.get  == "Test message")
-        assert(responseAs[Conversations].convs(0).users.get.contains("53403845036496d20080c280"))
+        assert(responseAs[Conversations].convs(0).users.get.contains("5383766d036457876c3dc24f"))
       }
       val mgsIds = Seq(messageID_1,messageID_2)
       Get("/api/conversation?id="+messageSaved.get.conversationId.get) ~> route ~> check {
@@ -96,19 +96,19 @@ class RouteHttpSpecConversationMessage extends WordSpecLike with ScalatestRouteT
       }
 
 
-      Delete("/api/conversation?id="+messageSaved.get.conversationId.get+"&userId=53403845036496d20080c280") ~> route ~>check {
+      Delete("/api/conversation?id="+messageSaved.get.conversationId.get+"&userId=5383766d036457876c3dc24f") ~> route ~>check {
         status should be(StatusCodes.OK)
       }
       //after deletion of a user I check that the conversation has been updated
-      Get("/api/conversation?userId="+"53403845036496d20080c279") ~> route ~> check {
+      Get("/api/conversation?userId="+"5383735e03641e76a78bded1") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Conversations].convs.isEmpty == false)
         assert(responseAs[Conversations].convs.size == 1)
-        assert(!responseAs[Conversations].convs(0).users.get.contains("53403845036496d20080c280"))
+        assert(!responseAs[Conversations].convs(0).users.get.contains("5383766d036457876c3dc24f"))
         assert(responseAs[Conversations].convs(0).users.size == 1)
       }
 
-      Get("/api/conversation?userId="+"53403845036496d20080c280") ~> route ~> check {
+      Get("/api/conversation?userId="+"5383766d036457876c3dc24f") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Conversations].convs.isEmpty == true)
       }
