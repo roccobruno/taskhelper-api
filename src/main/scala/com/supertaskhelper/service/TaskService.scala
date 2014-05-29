@@ -145,7 +145,7 @@ trait TaskService extends Service with ConverterUtil {
 
   private def buildComment(comment: DBObject, taskId: String): Comment = {
     val taskIdTemp = if(!taskId.isEmpty ) taskId else comment.getAs[String]("taskId").getOrElse("0")
-    val conversation = hasCommentAnswers(comment.getAs[String]("id").get)
+    val conversation = hasCommentAnswers(comment.getAs[String]("_id").getOrElse("NOT_"))
     Comment(
 
       dateCreated = comment.getAs[Date]("dateCreated").getOrElse(new Date()),
@@ -153,7 +153,7 @@ trait TaskService extends Service with ConverterUtil {
       userName = comment.getAs[String]("username").getOrElse("0"),
       comment = comment.getAs[String]("comment").getOrElse("NOT FOUND"),
       taskId = taskIdTemp,
-      id = comment.getAs[String]("id"),
+      id = comment.getAs[String]("_id"),
       status = comment.getAs[String]("status"),
       commentId =comment.getAs[String]("commentId"),
       conversation = conversation
@@ -227,7 +227,7 @@ trait TaskService extends Service with ConverterUtil {
       "username" -> comment.userName,
       "comment" -> comment.comment,
       "taskId" -> comment.taskId,
-      "id" -> id,
+      "_id" -> id,
       "status" -> COMMENT_STATUS.VALID.toString()
     )
   }
