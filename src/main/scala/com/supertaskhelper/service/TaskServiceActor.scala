@@ -31,6 +31,7 @@ import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.domain.BidJsonFormat._
 import com.supertaskhelper.domain.BidsJsonFormat._
 import com.supertaskhelper.domain.CommentJsonFormat._
+import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import com.supertaskhelper.domain.CommentsJsonFormat._
 import com.supertaskhelper.domain.TaskCategoryJsonFormat._
 import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
@@ -105,6 +106,22 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
+    case FindCommentAnswers(commentId: String) => {
+      val res = findCommentAnswerByCommentId(commentId)
+      if (res.isDefined) {
+        httpRequestContext.complete(res.get)
+      } else
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Comments Not Found")
+      context.stop(self)
+    }
+
+    case DeleteCommentAnswers(commentId:String) => {
+      log.info("Received request to delete comment answer  with commentId:{}", commentId)
+      deleteCommentAnswers(commentId)
+      httpRequestContext.complete(Response("Success", commentId))
+      context.stop(self)
+    }
+
     case DeleteTask(id: String) =>
 
       log.info("Received request to delete task with id:{}", id)
@@ -159,6 +176,23 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
     }
 
+    case CreateCommentAnswer(comment: CommentAnswer, language: String) => {
+      log.info("Received request to create the  CommentAnswer :{}", comment)
+      val task = findTaskById(comment.taskId)
+      if (!task.isDefined) {
+        httpRequestContext.complete(StatusCodes.NotFound, CacheHeader(MaxAge404), "Task Not Found")
+      } else {
+
+        val response = createCommentAnswer(comment)
+        val sendAlertActor = createSendAlertActor(context)
+        sendAlertActor ! new CommentAddedAlert(comment.taskId, comment.commentId.get, comment.userId, language, true);
+        httpRequestContext.complete(response)
+      }
+
+      context.stop(self)
+
+    }
+
     case f: FindTaskCategory => {
       httpRequestContext.complete(findTaskCategory(f.categoryType))
       context.stop(self)
@@ -178,8 +212,11 @@ object TaskServiceActor {
   case class CreateTask(task: Task, language: String)
   case class FindBids(taskId: String)
   case class FindComments(taskId: String)
+  case class FindCommentAnswers(commentId: String)
+  case class DeleteCommentAnswers(commentId: String)
   case class CreateBid(bid: Bid, language: String)
   case class CreateComment(comment: Comment, language: String)
+  case class CreateCommentAnswer(comment: CommentAnswer, language: String)
   case class FindTaskCategory(categoryType: Option[String]) {
     require(!categoryType.isDefined
       || categoryType.get == "ONLINE" || categoryType.get == "OFFLINE" || categoryType.get == "MT", "wrong value passed for type. The accepted ones are:ONLINE,OFFLINE and MT")

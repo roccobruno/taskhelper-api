@@ -35,7 +35,7 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   fbBudgetRequired: Option[Boolean], linkedInBudgetRequired: Option[Boolean], passportIdBudgetRequired: Option[Boolean],
   secDocBudgetRequired: Option[Boolean], twitterBudgetRequired: Option[Boolean], webcamBudgetRequired: Option[Boolean]) extends Searchable
 
-case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String]) {
+case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String],commentId:Option[String],conversation:Boolean) {
   require(!comment.isEmpty, "comment  cannot be empty")
   require(dateCreated != null, "createdDate  cannot be empty")
   require(!userId.isEmpty, "userId  cannot be empty")
@@ -44,7 +44,38 @@ case class Comment(id: Option[String], userId: String, userName: String, comment
   require(ObjectId.isValid(taskId), "taskId provided not valid")
 }
 
+case class CommentAnswer(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String],commentId:Option[String])
+{
+  require(!comment.isEmpty, "comment  cannot be empty")
+  require(dateCreated != null, "createdDate  cannot be empty")
+  require(!userId.isEmpty, "userId  cannot be empty")
+  require(!taskId.isEmpty, "taskId  cannot be empty")
+  require(!userName.isEmpty, "userName  cannot be empty")
+  require(ObjectId.isValid(taskId), "taskId provided not valid")
+  require(!commentId.isEmpty, "commentId  cannot be empty")
+}
+
+
+
 case class Comments(comments: Seq[Comment])
+object CommentAnswerJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val commentAnswerFormat = jsonFormat8(CommentAnswer)
+}
 
 object CommentJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
@@ -62,7 +93,7 @@ object CommentJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val commentFormat = jsonFormat7(Comment)
+  implicit val commentFormat = jsonFormat9(Comment)
 }
 
 object CommentsJsonFormat extends DefaultJsonProtocol {
@@ -81,7 +112,7 @@ object CommentsJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val commentFormat = jsonFormat7(Comment)
+  implicit val commentFormat = jsonFormat9(Comment)
   implicit val commentsFormat = jsonFormat1(Comments)
 }
 
@@ -158,7 +189,7 @@ object TaskJsonFormat extends DefaultJsonProtocol {
     }
   }
   implicit val bidFormat = jsonFormat9(Bid)
-  implicit val commentFormat = jsonFormat7(Comment)
+  implicit val commentFormat = jsonFormat9(Comment)
   implicit val taskFormat = jsonFormat22(Task)
 }
 

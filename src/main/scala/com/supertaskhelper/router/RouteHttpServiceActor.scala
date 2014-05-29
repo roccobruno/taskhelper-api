@@ -25,6 +25,7 @@ import com.supertaskhelper.service.UserServiceActor._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
 import com.supertaskhelper.domain.MessageJsonFormat._
 import com.supertaskhelper.security.UserTokensonFormat._
+import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 
 import com.supertaskhelper.service.actors.ActivityActor
 
@@ -218,6 +219,36 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
           }
         }
+      } ~ path("tasks" / "comments" / "answers") {
+        delete {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'commentId.as[String]) { commentId =>
+              ctx =>
+                val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! DeleteCommentAnswers(commentId)
+            }
+          }
+        } ~
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'commentId.as[String]) { commentId =>
+              ctx =>
+                val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! FindCommentAnswers(commentId)
+            }
+          }
+        } ~
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              entity(as[CommentAnswer]) { comment =>
+                ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! CreateCommentAnswer(comment, "it")
+
+              }
+            }
+          }
       } ~ path("tasks" / "comments") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {

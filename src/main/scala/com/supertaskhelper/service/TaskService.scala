@@ -69,7 +69,7 @@ trait TaskService extends Service with ConverterUtil {
       } else None
 
     val comms: Option[Seq[Comment]] = if (taskResult.get("comments").asInstanceOf[BasicDBList] != null) {
-      Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated after _.dateCreated)
+      Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated before _.dateCreated)
       )
     } else None
     val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
@@ -112,6 +112,12 @@ trait TaskService extends Service with ConverterUtil {
     collection remove (q)
   }
 
+  def deleteCommentAnswers(commentId:String) {
+    val collection = MongoFactory.getCollection("commentAnswer")
+    val query = MongoDBObject("commentId" -> commentId)
+    collection remove(query)
+  }
+
   private def buildBid(bid: DBObject, taskId: String): Bid = {
 
     Bid(
@@ -130,7 +136,34 @@ trait TaskService extends Service with ConverterUtil {
 
   }
 
+  private def hasCommentAnswers(commentId:String):Boolean ={
+
+     val res = findCommentAnswerByCommentId(commentId)
+     res.isDefined
+
+  }
+
   private def buildComment(comment: DBObject, taskId: String): Comment = {
+    val taskIdTemp = if(!taskId.isEmpty ) taskId else comment.getAs[String]("taskId").getOrElse("0")
+    val conversation = hasCommentAnswers(comment.getAs[String]("id").get)
+    Comment(
+
+      dateCreated = comment.getAs[Date]("dateCreated").getOrElse(new Date()),
+      userId = comment.getAs[String]("userId").getOrElse("0"),
+      userName = comment.getAs[String]("username").getOrElse("0"),
+      comment = comment.getAs[String]("comment").getOrElse("NOT FOUND"),
+      taskId = taskIdTemp,
+      id = comment.getAs[String]("id"),
+      status = comment.getAs[String]("status"),
+      commentId =comment.getAs[String]("commentId"),
+      conversation = conversation
+
+    )
+
+  }
+
+  private def buildCommentAnswer(comment: DBObject, taskId: String): Comment = {
+    val taskIdTemp = if(!taskId.isEmpty ) taskId else comment.getAs[String]("taskId").getOrElse("0")
 
     Comment(
 
@@ -138,9 +171,11 @@ trait TaskService extends Service with ConverterUtil {
       userId = comment.getAs[String]("userId").getOrElse("0"),
       userName = comment.getAs[String]("username").getOrElse("0"),
       comment = comment.getAs[String]("comment").getOrElse("NOT FOUND"),
-      taskId = taskId,
-      id = comment.getAs[String]("id"),
-      status = comment.getAs[String]("status")
+      taskId = taskIdTemp,
+      id = Option(comment.getAs[ObjectId]("_id").get.toString),
+      status = comment.getAs[String]("status"),
+      commentId =comment.getAs[String]("commentId"),
+      conversation = false
 
     )
 
@@ -179,6 +214,12 @@ trait TaskService extends Service with ConverterUtil {
     Response("Success", "1")
   }
 
+  def createCommentAnswer(comment:CommentAnswer)  = {
+    val collection = MongoFactory.getCollection("commentAnswer")
+    collection save (buildCommentAnswerDbObject(comment))
+    Response("Success", "1")
+  }
+
   def buildCommentDbObject(comment: Comment, id: String): MongoDBObject = {
     MongoDBObject(
       "dateCreated" -> new Date(),
@@ -187,6 +228,18 @@ trait TaskService extends Service with ConverterUtil {
       "comment" -> comment.comment,
       "taskId" -> comment.taskId,
       "id" -> id,
+      "status" -> COMMENT_STATUS.VALID.toString()
+    )
+  }
+
+  def buildCommentAnswerDbObject(comment: CommentAnswer): MongoDBObject = {
+    MongoDBObject(
+      "dateCreated" -> new Date(),
+      "userId" -> comment.userId,
+      "username" -> comment.userName,
+      "comment" -> comment.comment,
+      "taskId" -> comment.taskId,
+      "commentId" -> comment.commentId,
       "status" -> COMMENT_STATUS.VALID.toString()
     )
   }
@@ -227,6 +280,20 @@ trait TaskService extends Service with ConverterUtil {
       val taskResult = result.get
 
       Option(buildTask(taskResult, None))
+    } else
+      None
+  }
+
+  def findCommentAnswerByCommentId(id: String): Option[Comments] = {
+
+    val q = MongoDBObject("commentId" -> id)
+
+    val collection = MongoFactory.getCollection("commentAnswer")
+    val result = collection find q sort(MongoDBObject("dateCreated" -> -1))
+    if (result != None && result.size>0) {
+
+
+      Option(Comments(result.map(x => buildCommentAnswer(x,"")).toSeq))
     } else
       None
   }

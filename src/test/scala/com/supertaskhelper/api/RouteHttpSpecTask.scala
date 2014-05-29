@@ -7,7 +7,7 @@ import concurrent.duration._
 import org.scalatest.Matchers._
 import spray.http.StatusCodes
 import com.supertaskhelper.domain._
-import java.util.Date
+import java.util.{Calendar, GregorianCalendar, Date}
 import com.supertaskhelper.domain.TaskJsonFormat._
 
 import com.supertaskhelper.domain.ResponseJsonFormat._
@@ -17,6 +17,7 @@ import com.supertaskhelper.domain.Location
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import spray.routing.{MalformedQueryParamRejection, ValidationRejection}
 import com.supertaskhelper.router.RouteHttpService
 
@@ -62,21 +63,27 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         println(taskId)
       }
 
+
+
       val comment = Comment(None,"52515bb0e4b094388a43ca39","rocco","API test comment",new Date(),taskId.get,
-        None)
+        None,None,false)
 
       Post("/api/tasks/comments",comment) ~> route ~> check {
         status should be(StatusCodes.OK)
       }
 
       val comment2 = Comment(None,"52515bb0e4b094388a43ca39","rocco","API test comment",new Date(),"52515bb0e5b094388a43ca39",
-        None)
+        None,None,false)
 
 //      Post("/api/tasks/comments",comment2) ~> route ~> check {
 //        assert(rejections.size ==1)
 //        assert(rejections(0).isInstanceOf[MalformedQueryParamRejection])
 //        assert(rejections(0).asInstanceOf[MalformedQueryParamRejection].parameterName == "customerId")
 //      }
+
+
+
+
 
       Post("/api/tasks/comments",comment2) ~> route ~> check {
         status should be(StatusCodes.NotFound)
@@ -86,6 +93,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
       Post("/api/tasks/bids",bid) ~> route ~> check {
         status should be(StatusCodes.OK)
       }
+
+      var commentIDTest:Option[String] = None
 
       import com.supertaskhelper.domain.TasksJsonFormat._
       Get("/api/tasks?id=" + taskId.get) ~> route ~> check {
@@ -120,7 +129,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).comments.get(0).userName == comment.userName)
         assert(responseAs[Tasks].tasks(0).comments.get(0).id.isDefined)
         assert(responseAs[Tasks].tasks(0).comments.get(0).dateCreated.before(new Date()))
-
+        assert(responseAs[Tasks].tasks(0).comments.get(0).conversation == false)
+        commentIDTest = responseAs[Tasks].tasks(0).comments.get(0).id
         assert(responseAs[Tasks].tasks(0).bids.isDefined)
         assert(responseAs[Tasks].tasks(0).bids.get(0).comment == bid.comment)
         assert(responseAs[Tasks].tasks(0).bids.get(0).taskId == bid.taskId)
@@ -131,6 +141,41 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).bids.get(0).incrementedValue ==bid.incrementedValue)
         assert(responseAs[Tasks].tasks(0).bids.get(0).createdDate.isDefined)
       }
+
+      val date = new GregorianCalendar()
+      date.add(Calendar.DAY_OF_MONTH,-1);
+      val commentansw1 = CommentAnswer(None,"52515bb0e4b094388a43ca39","roccopippo","API test commentanswer",date.getTime,taskId.get,
+        None,commentIDTest)
+
+      val commentansw2 = CommentAnswer(None,"52515bb0e4b094388a43ca39","rocco","API test comment",new Date(),taskId.get,
+        None,commentIDTest)
+
+      Post("/api/tasks/comments/answers",commentansw1) ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+
+      Post("/api/tasks/comments/answers",commentansw2) ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+
+
+      import com.supertaskhelper.domain.CommentsJsonFormat._
+      Get("/api/tasks/comments/answers?commentId="+commentIDTest.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Comments].comments.size == 2)
+        assert(responseAs[Comments].comments(0).comment == commentansw2.comment)
+        assert(responseAs[Comments].comments(0).taskId == commentansw2.taskId)
+        assert(responseAs[Comments].comments(0).userId == commentansw2.userId)
+        assert(responseAs[Comments].comments(0).userName == commentansw2.userName)
+        assert(responseAs[Comments].comments(0).id.isDefined)
+        assert(responseAs[Comments].comments(0).dateCreated.before(new Date()))
+        assert(responseAs[Comments].comments(0).commentId== commentansw2.commentId)
+        assert(responseAs[Comments].comments(0).conversation == false)
+      }
+
+
+
+
       import com.supertaskhelper.domain.CommentsJsonFormat._
        Get("/api/tasks/comments?taskId="+taskId.get) ~> route ~> check {
          status should be(StatusCodes.OK)
@@ -141,7 +186,16 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
          assert(responseAs[Comments].comments(0).userName == comment.userName)
          assert(responseAs[Comments].comments(0).id.isDefined)
          assert(responseAs[Comments].comments(0).dateCreated.before(new Date()))
+         assert(responseAs[Comments].comments(0).conversation == true)
        }
+
+      Delete("/api/tasks/comments/answers?commentId="+commentIDTest.get)   ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+
+      Get("/api/tasks/comments/answers?commentId="+commentIDTest.get) ~> route ~> check {
+        status should be(StatusCodes.NotFound)
+      }
 
       import com.supertaskhelper.domain.BidsJsonFormat._
       Get("/api/tasks/bids?taskId="+taskId.get) ~> route ~> check {
