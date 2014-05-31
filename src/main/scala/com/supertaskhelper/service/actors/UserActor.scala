@@ -31,6 +31,7 @@ class UserActor extends Actor with ActorLogging with UserService {
   private def copyUser(u: User, dist: Option[String]): User = {
     User(
       userName = u.userName,
+      lastName = u.lastName,
       isSTH = u.isSTH,
       email = u.email,
       password = u.password,

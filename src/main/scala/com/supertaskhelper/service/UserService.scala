@@ -72,6 +72,8 @@ trait UserService extends Service with ConverterUtil {
 
       user = User(
         userName = userResult.getAs[String]("username").get,
+        lastName = userResult.getAs[String]("lastName").get,
+
         isSTH = userResult.getAs[Boolean]("STH").getOrElse(false),
         email = userResult.getAs[String]("email").get,
         password = userResult.getAs[String]("password").get,
@@ -180,6 +182,7 @@ trait UserService extends Service with ConverterUtil {
       MongoDBObject(
         "username" -> registrationUser.userName,
         "firstName" -> registrationUser.userName,
+        "lastName" -> registrationUser.lastname,
         "isSTH" -> false,
         "email" -> registrationUser.email,
         "password" -> Password.getSaltedHash(registrationUser.password),
@@ -192,6 +195,7 @@ trait UserService extends Service with ConverterUtil {
       MongoDBObject(
         "username" -> registrationUser.userName,
         "firstName" -> registrationUser.userName,
+        "lastName" -> registrationUser.lastname,
         "isSTH" -> false,
         "email" -> registrationUser.email,
         "password" -> Password.getSaltedHash(registrationUser.password),

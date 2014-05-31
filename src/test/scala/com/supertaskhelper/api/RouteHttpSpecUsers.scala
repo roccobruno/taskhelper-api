@@ -54,7 +54,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
     }
 
 
-    val userReg = UserRegistration("test_rocco","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
+    val userReg = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
 
     "accept user registration " in new RouteHttpSpecUsers {
       Post("/api/users",userReg) ~> route ~> check {
@@ -68,6 +68,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
        assert(responseAs[User].id == userId.get)
        assert(responseAs[User].email == "test_rocco@msn.com")
        assert(responseAs[User].userName == "test_rocco")
+       assert(responseAs[User].lastName == "test_lastname")
        assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
        assert(responseAs[User].imgUrl.get == "loadphoto/USER_"+userId.get)
        assert(responseAs[User].address.get == address)
@@ -94,6 +95,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         assert(responseAs[User].id == userId.get)
         assert(responseAs[User].email == "test_rocco@msn.com")
         assert(responseAs[User].userName == "test_rocco")
+          assert(responseAs[User].lastName == "test_lastname")
         assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
         assert(responseAs[User].address.get == address)
         assert(responseAs[User].address.get.address == address.address)
@@ -121,7 +123,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         status should be(StatusCodes.OK)
       }
 
-      val userReg2 = UserRegistration("test_rocco","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
+      val userReg2 = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
 
       Post("/api/users",userReg2) ~> route ~> check {
         status should be(StatusCodes.OK)
@@ -179,7 +181,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       val email:String = "test_rocco_reg@msn.com"
       val password:String = "test_rocco"
       val username = "test_rocco"
-      val userReg = UserRegistration(username,password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
+      val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
       var userId: Option[String] = None
       Post("/api/users",userReg) ~> route ~> check {
         status should be(StatusCodes.OK)
