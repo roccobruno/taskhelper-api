@@ -25,7 +25,7 @@ object Config {
 object RabbitMQConnection {
 
   private val connection: client.Connection = null
-  private val template: RabbitTemplate = null
+  private var template: RabbitTemplate = null
 
   /**
    * Return a connection if one doesn't exist. Else create
@@ -50,8 +50,8 @@ object RabbitMQConnection {
         var rc = new com.rabbitmq.client.ConnectionFactory();
         rc.setUri(uri);
         val cf = new CachingConnectionFactory(rc);
-        new RabbitTemplate(cf)
-
+        template = new RabbitTemplate(cf)
+        template
       }
       case _ => template
 
