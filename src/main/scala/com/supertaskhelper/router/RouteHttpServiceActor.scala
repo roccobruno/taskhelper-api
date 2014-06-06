@@ -224,27 +224,27 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
           respondWithMediaType(MediaTypes.`application/json`) {
             parameters(
               'commentId.as[String]) { commentId =>
-              ctx =>
-                val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! DeleteCommentAnswers(commentId)
-            }
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! DeleteCommentAnswers(commentId)
+              }
           }
         } ~
-        get {
-          respondWithMediaType(MediaTypes.`application/json`) {
-            parameters(
-              'commentId.as[String]) { commentId =>
-              ctx =>
-                val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! FindCommentAnswers(commentId)
+          get {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              parameters(
+                'commentId.as[String]) { commentId =>
+                  ctx =>
+                    val perRequestSearchingActor = createPerTaskActor(ctx)
+                    perRequestSearchingActor ! FindCommentAnswers(commentId)
+                }
             }
-          }
-        } ~
+          } ~
           post {
             respondWithMediaType(MediaTypes.`application/json`) {
               entity(as[CommentAnswer]) { comment =>
                 ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
-                  perRequestSearchingActor ! CreateCommentAnswer(comment, "it")
+                perRequestSearchingActor ! CreateCommentAnswer(comment, "it")
 
               }
             }

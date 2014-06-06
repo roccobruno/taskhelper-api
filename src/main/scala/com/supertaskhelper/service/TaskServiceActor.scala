@@ -115,7 +115,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
-    case DeleteCommentAnswers(commentId:String) => {
+    case DeleteCommentAnswers(commentId: String) => {
       log.info("Received request to delete comment answer  with commentId:{}", commentId)
       deleteCommentAnswers(commentId)
       httpRequestContext.complete(Response("Success", commentId))

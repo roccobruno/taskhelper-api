@@ -172,13 +172,13 @@ trait UserService extends Service with ConverterUtil {
 
   def saveUser(registrationUser: UserRegistration, locale: Locale): String = {
     val collection = MongoFactory.getCollection("user")
-    val userDoc =  getUserMongoDBObject(registrationUser,locale)
+    val userDoc = getUserMongoDBObject(registrationUser, locale)
     collection.save(userDoc)
     userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
-  def getUserMongoDBObject(registrationUser:UserRegistration,locale:Locale):MongoDBObject = {
-    if(registrationUser.address.isDefined) {
+  def getUserMongoDBObject(registrationUser: UserRegistration, locale: Locale): MongoDBObject = {
+    if (registrationUser.address.isDefined) {
       MongoDBObject(
         "username" -> registrationUser.userName,
         "firstName" -> registrationUser.userName,

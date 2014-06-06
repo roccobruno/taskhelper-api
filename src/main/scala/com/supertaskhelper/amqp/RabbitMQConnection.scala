@@ -45,7 +45,7 @@ object RabbitMQConnection {
   def getRabbitTemplate(): RabbitTemplate = {
     template match {
       case null => {
-        var uri = System.getenv("CLOUDAMQP_URL_EXT");
+        var uri = System.getProperty("CLOUDAMQP_URL_EXT");
         if (uri == null) uri = "amqp://guest:guest@localhost";
         var rc = new com.rabbitmq.client.ConnectionFactory();
         rc.setUri(uri);
