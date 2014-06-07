@@ -172,6 +172,11 @@ trait UserService extends Service with ConverterUtil {
 
   def saveUser(registrationUser: UserRegistration, locale: Locale): String = {
     val collection = MongoFactory.getCollection("user")
+    //first have to delete previous requests
+    val q = MongoDBObject("email" -> registrationUser.email)
+    collection remove q
+
+
     val userDoc = getUserMongoDBObject(registrationUser, locale)
     collection.save(userDoc)
     userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString

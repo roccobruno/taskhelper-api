@@ -33,10 +33,17 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
 
     case CreateUser(user: UserRegistration, language: String) => {
 
-      val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
-      val alertActor = createSendAlertActor(context)
-      alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language, SOURCE.valueOf(user.source.get))
-      ctx.complete(Response("Resource Added", id))
+      if(UserUtil.isAlreadyUsed(user.email)) {
+        ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "Email already used")
+      } else {
+        val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
+        val alertActor = createSendAlertActor(context)
+        alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language, SOURCE.valueOf(user.source.get))
+        ctx.complete(Response("Resource Added", id))
+      }
+
+
+
       context.stop(self)
 
     }

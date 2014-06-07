@@ -9,6 +9,7 @@ import com.supertaskhelper.common.enums.SOURCE
 import com.supertaskhelper.domain.search.Searchable
 import spray.json._
 import DefaultJsonProtocol._
+import com.supertaskhelper.service.UserUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -33,13 +34,16 @@ case class UserRegistration(userName: String, lastname: String, password: String
     language: Option[Locale], source: Option[String], address: Option[Address]) {
 
   require(!userName.isEmpty, "username must not be empty")
+  require(!source.isEmpty, "source must not be empty")
   require(!lastname.isEmpty, "lastname must not be empty")
   require(!email.isEmpty, "email must not be empty")
+//  require(!email.isEmpty && !UserUtil.isAlreadyUsed(email), "email already used")
   require(!password.isEmpty, "password must not be empty")
   require(!confirmPassword.isEmpty, "confirmPassword must not be empty")
   require(password == confirmPassword, "password and confirmpassword must be equals")
-  require(source.isEmpty || SOURCE.valueOf(source.get) != null, "source value not recognized")
+  require(SOURCE.valueOf(source.get) != null, "source value not recognized")
   require(address.isEmpty || (address.get.location.isDefined), "Address must have a geolocation")
+
 
 }
 

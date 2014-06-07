@@ -61,6 +61,12 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)
+      }
+
+      Post("/api/users",userReg) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Resource Added"))
+        userId = Option(responseAs[Response].id)
      }
 
      Get("/api/users?id="+userId.get) ~> route ~> check {
@@ -166,6 +172,18 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
 
 
 
+    }
+
+
+    "should return an error due to email already used" in new  RouteHttpSpecUsers with UserService {
+      val email:String = "test_rocco_login@msn.com"
+      val password:String = "test_rocco"
+      val username = "test_rocco"
+      val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
+      var userId: Option[String] = None
+      Post("/api/users",userReg) ~> route ~> check {
+        status should be(StatusCodes.BadRequest)
+      }
     }
 
     /*
