@@ -31,7 +31,7 @@ import com.supertaskhelper.service.UserService
  */
 class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService {
 
-  implicit val routeTestTimeout = RouteTestTimeout(5 seconds)
+  implicit val routeTestTimeout = RouteTestTimeout(15 seconds)
 
   val location = Location("40.1508677", "16.2848214")
   val address = Address(Option("via carlo levi API"), Option("Senise"), "Italia", Option(location),
