@@ -4,7 +4,7 @@ import akka.actor.{ Props, ActorLogging, Actor }
 import com.supertaskhelper.util.ActorFactory
 import akka.event.LoggingReceive
 
-import com.supertaskhelper.service.UserServiceActor.{ DeleteUser, CreateUser }
+import com.supertaskhelper.service.UserServiceActor.{ FindFeedbacks, FindSkills, DeleteUser, CreateUser }
 import com.supertaskhelper.common.domain.Password
 import com.supertaskhelper.domain.search.UserSearchParams
 import spray.routing.RequestContext
@@ -14,6 +14,10 @@ import spray.routing.RequestContext
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import spray.httpx.SprayJsonSupport._
 import com.supertaskhelper.domain.UserJsonFormat._
+import com.supertaskhelper.domain.FeedbackJsonFormat._
+import com.supertaskhelper.domain.FeedbacksJsonFormat._
+import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
+import com.supertaskhelper.domain.TaskCategoryJsonFormat._
 import com.supertaskhelper.domain.{ Response, LocaleLanguage, UserRegistration }
 import com.supertaskhelper.common.jms.alerts.ConfirmationEmailAlert
 import com.supertaskhelper.common.enums.SOURCE
@@ -33,7 +37,7 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
 
     case CreateUser(user: UserRegistration, language: String) => {
 
-      if(UserUtil.isAlreadyUsed(user.email)) {
+      if (UserUtil.isAlreadyUsed(user.email)) {
         ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "Email already used")
       } else {
         val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
@@ -42,8 +46,28 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
         ctx.complete(Response("Resource Added", id))
       }
 
+      context.stop(self)
 
+    }
 
+    case FindSkills(userId: String) => {
+      if (!ObjectId.isValid(userId))
+        ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "UserId not valid")
+      else {
+        val skills = findUserSkills(userId)
+        ctx.complete(skills)
+      }
+      context.stop(self)
+
+    }
+
+    case FindFeedbacks(userId: String) => {
+      if (!ObjectId.isValid(userId))
+        ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "UserId not valid")
+      else {
+        val feedbacks = findUserFeebacks(userId)
+        ctx.complete(feedbacks)
+      }
       context.stop(self)
 
     }
@@ -82,7 +106,8 @@ object UserServiceActor {
     require(ObjectId.isValid(id), "id provided not valid")
   }
   case class CreateUser(user: UserRegistration, language: String)
-
+  case class FindSkills(userId: String)
+  case class FindFeedbacks(userId: String)
   def props(name: String) = Props(classOf[UserServiceActor], name)
 
   def props() = Props(classOf[UserServiceActor])

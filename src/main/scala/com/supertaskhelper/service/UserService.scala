@@ -1,7 +1,7 @@
 package com.supertaskhelper.service
 
 import com.supertaskhelper.{ Settings, MongoFactory }
-import com.supertaskhelper.domain.{ Address, Location, UserRegistration, User }
+import com.supertaskhelper.domain._
 import com.mongodb.casbah.Imports._
 import java.util.{ Locale, GregorianCalendar, Calendar, Date }
 import akka.actor.{ ActorSystem, Actor, ActorLogging }
@@ -9,9 +9,9 @@ import akka.event.LoggingReceive
 import com.mongodb.casbah.commons.conversions.MongoConversionHelper
 import com.mongodb.casbah.commons.MongoDBObject
 
-import com.supertaskhelper.common.domain.Password
+import com.supertaskhelper.common.domain.{ Password }
 import com.mongodb.casbah.commons.MongoDBObject
-import com.supertaskhelper.common.enums.ACCOUNT_STATUS
+import com.supertaskhelper.common.enums.{TASK_TYPE, ACCOUNT_STATUS}
 import java.util
 import com.typesafe.config.ConfigFactory
 import com.mongodb.BasicDBObject
@@ -19,6 +19,11 @@ import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.supertaskhelper.util.ConverterUtil
+import com.supertaskhelper.domain.Location
+import com.supertaskhelper.service.UserToken
+import com.supertaskhelper.domain.User
+import com.supertaskhelper.domain.UserRegistration
+import com.supertaskhelper.domain.Address
 
 /**
  * Created with IntelliJ IDEA.
@@ -29,6 +34,76 @@ import com.supertaskhelper.util.ConverterUtil
  */
 
 trait UserService extends Service with ConverterUtil {
+
+  def findUserSkills(userId: String): TaskCategories = {
+    val collection = MongoFactory.getCollection("user")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(userId))
+    val fields = MongoDBObject("onlineSkills" -> 1, "offlineSkills" -> 1)
+    var res = collection findOne (q, fields)
+
+    var skills:Seq[TaskCategory] = Seq()
+
+    if (res.isDefined) {
+      val userResult = res.get
+      if (userResult.get("onlineSkills").asInstanceOf[BasicDBList] != null) {
+        skills = skills ++ userResult.get("onlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject],TASK_TYPE.ONLINE.toString)).toSeq
+      }
+      if (userResult.get("offlineSkills").asInstanceOf[BasicDBList] != null) {
+       skills =  skills ++ userResult.get("offlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject],TASK_TYPE.OFFLINE.toString)).toSeq
+      }
+
+      TaskCategories(skills)
+
+    } else {
+      TaskCategories(Seq())
+    }
+
+  }
+
+  def findUserFeebacks(userId: String): Feedbacks = {
+    val collection = MongoFactory.getCollection("user")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(userId))
+    val fields = MongoDBObject("feedbacks" -> 1)
+    var res = collection findOne (q, fields)
+
+    var skills:Seq[Feedback] = Seq()
+
+    if (res.isDefined) {
+      val userResult = res.get
+      if (userResult.get("feedbacks").asInstanceOf[BasicDBList] != null) {
+        skills = skills ++ (userResult.get("feedbacks").asInstanceOf[BasicDBList].map(x => buildFeedback(x.asInstanceOf[BasicDBObject]))).toSeq.sortWith(_.createdDate after _.createdDate)
+      }
+
+      Feedbacks(skills)
+
+    } else {
+      Feedbacks(Seq())
+    }
+
+  }
+
+  private def buildFeedback(feedback: DBObject): Feedback = {
+    Feedback(
+      userId = feedback.getAs[String]("userId").getOrElse(""),
+      description = feedback.getAs[String]("description").getOrElse(""),
+      createdDate = feedback.getAs[Date]("created_date").getOrElse(new Date()),
+      taskId = feedback.getAs[String]("taskId").getOrElse(""),
+      rating = feedback.getAs[Int]("rating").getOrElse(1)
+
+    )
+  }
+
+  private def buildTaskCategory(category: DBObject,tasktype:String): TaskCategory = {
+    TaskCategory(
+      id = category.getAs[ObjectId]("_id").get.toString,
+      categoryType = Option(tasktype),
+      title_it = category.getAs[String]("title_it"),
+      title_en = category.getAs[String]("title_en"),
+      description = category.getAs[String]("description"),
+      order = category.getAs[Int]("order"),
+      tariff = category.getAs[String]("tariff")
+    )
+  }
 
   /**
    * finds a user by username
@@ -175,7 +250,6 @@ trait UserService extends Service with ConverterUtil {
     //first have to delete previous requests
     val q = MongoDBObject("email" -> registrationUser.email)
     collection remove q
-
 
     val userDoc = getUserMongoDBObject(registrationUser, locale)
     collection.save(userDoc)

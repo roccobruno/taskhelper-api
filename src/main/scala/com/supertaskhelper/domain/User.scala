@@ -37,14 +37,55 @@ case class UserRegistration(userName: String, lastname: String, password: String
   require(!source.isEmpty, "source must not be empty")
   require(!lastname.isEmpty, "lastname must not be empty")
   require(!email.isEmpty, "email must not be empty")
-//  require(!email.isEmpty && !UserUtil.isAlreadyUsed(email), "email already used")
+  //  require(!email.isEmpty && !UserUtil.isAlreadyUsed(email), "email already used")
   require(!password.isEmpty, "password must not be empty")
   require(!confirmPassword.isEmpty, "confirmPassword must not be empty")
   require(password == confirmPassword, "password and confirmpassword must be equals")
   require(SOURCE.valueOf(source.get) != null, "source value not recognized")
   require(address.isEmpty || (address.get.location.isDefined), "Address must have a geolocation")
 
+}
 
+case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String)
+case class Feedbacks(feedbacks: Seq[Feedback])
+
+object FeedbackJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val feedbackFormat = jsonFormat5(Feedback)
+}
+
+object FeedbacksJsonFormat extends DefaultJsonProtocol {
+  implicit object DateFormat extends RootJsonFormat[Date] {
+    def write(c: Date) = {
+      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      JsString(dateStringFormat.format(c))
+    }
+
+    def read(value: JsValue) = value match {
+      case JsString(value) => {
+        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        dateStringFormat.parse(value)
+      }
+
+      case _ => deserializationError("Date expected")
+    }
+  }
+  implicit val feedbackFormat = jsonFormat5(Feedback)
+  implicit val feedbacksFormat = jsonFormat1(Feedbacks)
 }
 
 object UserRegistrationJsonFormat extends DefaultJsonProtocol {

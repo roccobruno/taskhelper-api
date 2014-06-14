@@ -14,7 +14,7 @@ import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import java.util.Date
-import com.supertaskhelper.common.enums.COMMENT_STATUS
+import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_TYPE, COMMENT_STATUS }
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.supertaskhelper.util.ConverterUtil
@@ -26,12 +26,12 @@ import com.supertaskhelper.util.ConverterUtil
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService extends Service with ConverterUtil {
+trait TaskService extends Service with ConverterUtil with CityService {
 
   val conn = MongoFactory.getConnection
 
   def findTask(params: TaskParams): Seq[Task] = {
-    println("Build Task with params:{}", params)
+
     val q = buildQuery(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
@@ -77,6 +77,19 @@ trait TaskService extends Service with ConverterUtil {
     val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
     val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
+
+    val badg = TaskBadges(taskResult.getAs[Boolean]("emailVerBudgetRequired"),
+      taskResult.getAs[Boolean]("linkedInBudgetRequired"), taskResult.getAs[Boolean]("fbBudgetRequired"),
+      taskResult.getAs[Boolean]("passportIdBudgetRequired"), taskResult.getAs[Boolean]("twitterBudgetRequired"), taskResult.getAs[Boolean]("secDocBudgetRequired"), taskResult.getAs[Boolean]("webcamBudgetRequired"))
+
+    val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
+
+    val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
+      taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
+      taskResult.getAs[Boolean]("repeat"),
+      Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
+      Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")), Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")))
+
     import _root_.scala.collection.JavaConverters._
     val task = Task(
       title = taskResult.getAs[String]("title").getOrElse(""),
@@ -94,14 +107,10 @@ trait TaskService extends Service with ConverterUtil {
       category = taskResult.getAs[String]("category"),
       categoryId = taskResult.getAs[String]("categoryId"),
       taskType = taskResult.getAs[String]("type").get,
-      emailVerBudgetRequired = taskResult.getAs[Boolean]("emailVerBudgetRequired"),
-      linkedInBudgetRequired = taskResult.getAs[Boolean]("linkedInBudgetRequired"),
-      fbBudgetRequired = taskResult.getAs[Boolean]("fbBudgetRequired"),
-      passportIdBudgetRequired = taskResult.getAs[Boolean]("passportIdBudgetRequired"),
-      twitterBudgetRequired = taskResult.getAs[Boolean]("twitterBudgetRequired"),
-      secDocBudgetRequired = taskResult.getAs[Boolean]("secDocBudgetRequired"),
-      webcamBudgetRequired = taskResult.getAs[Boolean]("webcamBudgetRequired")
-
+      badges = Option(badg),
+      requestType = taskResult.getAs[String]("requestType").get,
+      hireSthId = taskResult.getAs[String]("hireSthId"),
+      taskPrice = Option(taskPrice)
     )
     task //return the task object
   }
@@ -260,7 +269,8 @@ trait TaskService extends Service with ConverterUtil {
       title_it = category.getAs[String]("title_it"),
       title_en = category.getAs[String]("title_en"),
       description = category.getAs[String]("description"),
-      order = category.getAs[Int]("order")
+      order = category.getAs[Int]("order"),
+      tariff = category.getAs[String]("tariff")
     )
   }
 
@@ -297,15 +307,31 @@ trait TaskService extends Service with ConverterUtil {
       None
   }
 
-  def createTask(task: Task) = {
+  def getAddressForTasksOnline {
+
+    val location = Location("41.87194", "12.56738")
+    val address = Address(Option(""), Option(""), "ITALIA", Option(location), "", Option(""))
+    address
+  }
+
+  def createTask(task: Task, langauge: String) = {
     val collection = MongoFactory.getCollection("task")
-    val doc = if (task.address != null) buildMongodBObjTaskWithAddress(task) else buildMongodBObjTaskWithoutAddress(task)
+    val doc = if (task.address != null) buildMongodBObjTaskWithAddress(task, true) else buildMongodBObjTaskWithAddress(task, false)
     collection.save(doc)
+
+    if (task.taskType == "OFFLINE" && task.address.isDefined) {
+
+      saveCityFromAddress(task.address.get, langauge)
+
+    }
 
     Response("Success", doc.getAs[org.bson.types.ObjectId]("_id").get.toString)
 
   }
-  private def buildMongodBObjTaskWithAddress(task: Task): MongoDBObject = {
+
+  case class Price(numOfWorkingHour: Int, tariffWithoutFeeForSTH: String, tariffWithFeeForSTH: String)
+
+  private def buildMongodBObjTaskWithAddress(task: Task, useTaskAddress: Boolean): MongoDBObject = {
     val obj = MongoDBObject(
 
       "createdDate" -> task.createdDate,
@@ -315,46 +341,32 @@ trait TaskService extends Service with ConverterUtil {
       "time" -> task.time,
       "userId" -> task.userId,
       "status" -> task.status,
-      "category" -> task.category,
+      "category" -> task.categoryId,
       "categoryId" -> task.categoryId,
       "type" -> task.taskType,
-      "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
-      "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
-      "twitterBudgetRequired" -> task.twitterBudgetRequired,
-      "fbBudgetRequired" -> task.fbBudgetRequired,
-      "secDocBudgetRequired" -> task.secDocBudgetRequired,
-      "webcamBudgetRequired" -> task.webcamBudgetRequired,
-      "passportIdBudgetRequired" -> task.passportIdBudgetRequired,
+      "hireSthId" -> task.hireSthId.getOrElse(""),
+      "withHire" -> (if (task.hireSthId.isDefined) true else false),
+      "hasPriceSuggested" -> (if (task.taskPrice.isDefined) task.taskPrice.get.hasPriceSuggested.getOrElse(false) else false),
+      "priceSuggested" -> (if (task.taskPrice.isDefined) task.taskPrice.get.priceSuggested.getOrElse("0") else "0"),
+      "requestType" -> task.requestType,
+      "payPerHour" -> (if (task.taskPrice.isDefined) task.taskPrice.get.isPerHour.getOrElse(false) else false),
+      "hoursToDo" -> (if (task.taskPrice.isDefined) task.taskPrice.get.nOfHours.getOrElse(0) else 0),
+      "repeat" -> (if (task.taskPrice.isDefined) task.taskPrice.get.toRepeat.getOrElse(false) else false),
+      "timesToRepeat" -> (if (task.taskPrice.isDefined) task.taskPrice.get.nOfWeeks.getOrElse(0) else 0),
+      "price" -> getMongoDBObjFromTaskPrice(task),
+      "postedDate" -> (if (task.requestType == TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString) task.createdDate else null),
+      "emailVerBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.emailVerBudgetRequired else false),
+      "linkedInBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.linkedInBudgetRequired else false),
+      "twitterBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.twitterBudgetRequired else false),
+      "fbBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.fbBudgetRequired else false),
+      "secDocBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.secDocBudgetRequired else false),
+      "webcamBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.webcamBudgetRequired else false),
+      "passportIdBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.passportIdBudgetRequired else false),
 
-      "address" -> getMongoDBObjFromAddress(task.address.get)
+      "address" -> (if (useTaskAddress) getMongoDBObjFromAddress(task.address.get) else getAddressForTasksOnline)
 
     )
 
-    obj
-  }
-
-  private def buildMongodBObjTaskWithoutAddress(task: Task): MongoDBObject = {
-    val obj = MongoDBObject(
-
-      "createdDate" -> task.createdDate,
-      "description" -> task.description,
-      "title" -> task.title,
-      "endDate" -> task.endDate,
-      "time" -> task.time,
-      "userId" -> task.userId,
-      "status" -> task.status,
-      "category" -> task.category,
-      "categoryId" -> task.categoryId,
-      "type" -> task.taskType,
-      "emailVerBudgetRequired" -> task.emailVerBudgetRequired,
-      "linkedInBudgetRequired" -> task.linkedInBudgetRequired,
-      "twitterBudgetRequired" -> task.twitterBudgetRequired,
-      "fbBudgetRequired" -> task.fbBudgetRequired,
-      "secDocBudgetRequired" -> task.secDocBudgetRequired,
-      "webcamBudgetRequired" -> task.webcamBudgetRequired,
-      "passportIdBudgetRequired" -> task.passportIdBudgetRequired
-
-    )
     obj
   }
 

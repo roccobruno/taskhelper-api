@@ -12,7 +12,7 @@ import spray.httpx.SprayJsonSupport._
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import spray.routing.RequestContext
 import com.supertaskhelper.amqp.SendingAlertsActor
-import com.supertaskhelper.common.jms.alerts.{ CommentAddedAlert, BidAlert, BetterBidCreatedAlert, CreatedTaskAlert }
+import com.supertaskhelper.common.jms.alerts._
 import spray.http.StatusCodes
 import com.supertaskhelper.domain.TasksJsonFormat._
 import com.supertaskhelper.service.TaskServiceActor.DeleteTask
@@ -33,10 +33,34 @@ import com.supertaskhelper.domain.BidsJsonFormat._
 import com.supertaskhelper.domain.CommentJsonFormat._
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import com.supertaskhelper.domain.CommentsJsonFormat._
+import com.supertaskhelper.domain.TaskBadgesJsonFormat._
+import com.supertaskhelper.domain.TaskPriceJsonFormat._
 import com.supertaskhelper.domain.TaskCategoryJsonFormat._
 import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
 import java.util.Date
 import com.supertaskhelper.service.actors.{ TaskActor, TaskNotFound }
+import com.supertaskhelper.domain.Bids
+import com.supertaskhelper.service.actors.TaskNotFound
+import com.supertaskhelper.domain.Response
+import com.supertaskhelper.service.TaskServiceActor.CreateBid
+import spray.routing.RequestContext
+import com.supertaskhelper.service.TaskServiceActor.FindBids
+import com.supertaskhelper.service.TaskServiceActor.FindTaskCategory
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.service.TaskServiceActor.FindComments
+import com.supertaskhelper.domain.Bid
+import com.supertaskhelper.domain.Comment
+import com.supertaskhelper.service.TaskServiceActor.DeleteTask
+import com.supertaskhelper.service.TaskServiceActor.CreateTask
+import com.supertaskhelper.service.TaskServiceActor.CreateComment
+import com.supertaskhelper.domain.CommentAnswer
+import com.supertaskhelper.service.TaskServiceActor.FindCommentAnswers
+import com.supertaskhelper.service.TaskServiceActor.DeleteCommentAnswers
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.Comments
+import com.supertaskhelper.domain.Tasks
+import com.supertaskhelper.service.TaskServiceActor.CreateCommentAnswer
+import com.supertaskhelper.service.TaskServiceActor.FindTask
 
 /**
  * Created with IntelliJ IDEA.
@@ -128,14 +152,24 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       deleteTask(id.toString)
       httpRequestContext.complete(Response("Success", id))
       context.stop(self)
-    case CreateTask(task: Task, language: String) =>
+    case CreateTask(task: Task, language: String) => {
       log.info("Received request to create the  task :{}", task)
-      val response = createTask(task)
+      val response = createTask(task, language)
+
       val sendAlertActor = createSendAlertActor(context)
-      sendAlertActor ! new CreatedTaskAlert(response.id, language)
+
+      if (task.hireSthId.isDefined) {
+        //task request. need to send ale(rt only to the choosen STH
+        sendAlertActor ! new TaskRequestAlert(response.id, language)
+
+      } else {
+        //normal task open to bid
+        sendAlertActor ! new CreatedTaskAlert(response.id, language)
+      }
+
       httpRequestContext.complete(response)
       context.stop(self)
-
+    }
     case CreateBid(bid: Bid, language: String) => {
       log.info("Received request to create the  bid :{}", bid)
 

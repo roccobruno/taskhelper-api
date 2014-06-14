@@ -14,10 +14,13 @@ import com.supertaskhelper.domain.Location
 import com.supertaskhelper.domain.Task
 import com.supertaskhelper.domain.Address
 import spray.routing.{AuthenticationFailedRejection, MalformedQueryParamRejection, ValidationRejection}
-import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, ACTIVITY_TYPE, SOURCE}
+import com.supertaskhelper.common.enums.{TASK_TYPE, ACCOUNT_STATUS, ACTIVITY_TYPE, SOURCE}
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain.UserJsonFormat._
+import com.supertaskhelper.domain.FeedbacksJsonFormat._
+import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
+
 import com.supertaskhelper.security.UserToken
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.UserService
@@ -168,6 +171,51 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       //logout test
       Get("/api/logout?email=test_rocco_login@msn.com") ~> route ~> check {
         status should be(StatusCodes.OK)
+      }
+
+
+
+    }
+
+
+    // Based on a user alsredy existing in the DB with 1 feeback a 1 offline skill and 2 online ones
+    "should return a list of feebaks and skills" in new RouteHttpSpecUsers {
+
+      var token = ""
+      //login test
+      Get("/api/users/feedbacks?userId=5383735e03641e76a78bded1") ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(!responseAs[Feedbacks].feedbacks.isEmpty)
+        assert(responseAs[Feedbacks].feedbacks(0).rating ==4)
+        assert(responseAs[Feedbacks].feedbacks(0).taskId == "53335517e4b0e724b3b614c3")
+        assert(responseAs[Feedbacks].feedbacks(0).description == "veloce e affiabile. grosso aiuto")
+        assert(responseAs[Feedbacks].feedbacks(0).userId == "526d47a2e4b065aeb452d43f")
+        assert(responseAs[Feedbacks].feedbacks(0).createdDate.before(new Date()))
+
+      }
+
+      //logout test
+      Get("/api/users/skills?userId=5383735e03641e76a78bded1") ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(!responseAs[TaskCategories].categories.isEmpty)
+        var countOnlines = 0
+        var countOfflines = 0
+
+        for ( x <- responseAs[TaskCategories].categories){
+          if(x.categoryType.get == TASK_TYPE.OFFLINE.toString) {
+            countOfflines = countOfflines + 1
+            assert(x.id == "52515bb0e4b094388a43ca39")
+            assert(x.title_it.get == "tuttofare")
+            assert(x.title_en.get == "handyman")
+            assert(x.tariff.get == "10")
+          }
+          else
+            countOnlines = countOnlines + 1
+        }
+        assert(countOfflines == 1)
+        assert(countOnlines == 3)
+
+
       }
 
 

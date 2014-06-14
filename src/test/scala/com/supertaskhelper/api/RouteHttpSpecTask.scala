@@ -20,6 +20,7 @@ import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import spray.routing.{MalformedQueryParamRejection, ValidationRejection}
 import com.supertaskhelper.router.RouteHttpService
+import com.supertaskhelper.common.enums.TASK_STATUS
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,9 +38,12 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
     "85038", Option("Basilicata")
   )
 
+  val taskPrice = TaskPrice(Option(true),Option("10"),Option(true),Option(2),Option(true),Option(3),Option("2"),Option("3"))
+  val taskBadge = TaskBadges(Option(true), Option(true), Option(true), Option(true), Option(true), Option(true), Option(true))
+
   val task = Task(None, "Api Task Test", "Api Task test desc", new Date(), Option(address), new Date(),
-    "17.00", "OPEN", "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
-    Option("52515bb0e4b094388a43ca39"), "OFFLINE", Option(true), Option(true), Option(true), Option(true), Option(true), Option(true), Option(true)
+    "17.00", TASK_STATUS.TOAPPROVEREQUEST.toString, "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
+    Option("52515bb0e4b094388a43ca39"), "OFFLINE",Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
 
   )
 
@@ -112,16 +116,26 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).address.get.location == task.address.get.location)
         assert(responseAs[Tasks].tasks(0).address.get.location.get.latitude == task.address.get.location.get.latitude)
         assert(responseAs[Tasks].tasks(0).address.get.location.get.longitude == task.address.get.location.get.longitude)
-        assert(responseAs[Tasks].tasks(0).category == task.category)
+        assert(responseAs[Tasks].tasks(0).category == task.categoryId)
         assert(responseAs[Tasks].tasks(0).categoryId == task.categoryId)
         assert(responseAs[Tasks].tasks(0).status == task.status)
-        assert(responseAs[Tasks].tasks(0).passportIdBudgetRequired == task.passportIdBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).webcamBudgetRequired == task.webcamBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).secDocBudgetRequired == task.secDocBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).fbBudgetRequired == task.fbBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).twitterBudgetRequired == task.twitterBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).linkedInBudgetRequired == task.linkedInBudgetRequired)
-        assert(responseAs[Tasks].tasks(0).emailVerBudgetRequired == task.emailVerBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.passportIdBudgetRequired == task.badges.get.passportIdBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.webcamBudgetRequired == task.badges.get.webcamBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.secDocBudgetRequired == task.badges.get.secDocBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.fbBudgetRequired == task.badges.get.fbBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.twitterBudgetRequired == task.badges.get.twitterBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.linkedInBudgetRequired == task.badges.get.linkedInBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).badges.get.emailVerBudgetRequired == task.badges.get.emailVerBudgetRequired)
+        assert(responseAs[Tasks].tasks(0).requestType == task.requestType)
+        assert(responseAs[Tasks].tasks(0).hireSthId.get == task.hireSthId.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.hasPriceSuggested.get == task.taskPrice.get.hasPriceSuggested.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.isPerHour.get == task.taskPrice.get.isPerHour.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.nOfHours.get == task.taskPrice.get.nOfHours.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.nOfWeeks.get == task.taskPrice.get.nOfWeeks.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.priceSuggested.get == task.taskPrice.get.priceSuggested.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.tariffWithFeeForSth.get == task.taskPrice.get.tariffWithFeeForSth.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.tariffWithoutFeeForSth.get == task.taskPrice.get.tariffWithoutFeeForSth.get)
+          assert(responseAs[Tasks].tasks(0).taskPrice.get.toRepeat.get == task.taskPrice.get.toRepeat.get)
         assert(responseAs[Tasks].tasks(0).comments.isDefined)
         assert(responseAs[Tasks].tasks(0).comments.get(0).comment == comment.comment)
         assert(responseAs[Tasks].tasks(0).comments.get(0).taskId == comment.taskId)

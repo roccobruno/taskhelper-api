@@ -12,13 +12,13 @@ import spray.json.DefaultJsonProtocol
 case class TaskCategories(categories: Seq[TaskCategory])
 
 case class TaskCategory(id: String, categoryType: Option[String], title_it: Option[String],
-  title_en: Option[String], description: Option[String], order: Option[Int])
+  title_en: Option[String], description: Option[String], order: Option[Int], tariff: Option[String]) //tariff used in case of userskill
 
 object TaskCategoryJsonFormat extends DefaultJsonProtocol {
-  implicit val taskCategoryFormat = jsonFormat6(TaskCategory)
+  implicit val taskCategoryFormat = jsonFormat7(TaskCategory)
 }
 
 object TaskCategoriesJsonFormat extends DefaultJsonProtocol {
-  implicit val taskCategoryFormat = jsonFormat6(TaskCategory)
+  implicit val taskCategoryFormat = jsonFormat7(TaskCategory)
   implicit val taskCategoriesFormat = jsonFormat1(TaskCategories)
 }

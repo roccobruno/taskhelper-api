@@ -6,6 +6,7 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import org.bson.types.ObjectId
 import com.supertaskhelper.domain.search.Searchable
+import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_STATUS }
 
 /**
  * Created with IntelliJ IDEA.
@@ -30,10 +31,45 @@ case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: String, regione: Option[String])
 
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
-  bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
-  categoryId: Option[String], taskType: String, emailVerBudgetRequired: Option[Boolean],
+    bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
+    categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice]) extends Searchable {
+
+  require(createdDate != null, "createdDate cannot be null")
+  require(!title.isEmpty, "title cannot be empty")
+  require(!description.isEmpty, "description cannot be empty")
+  require(!taskType.isEmpty, "taskType cannot be empty")
+  require((taskType == "ONLINE" && address.isEmpty) || (taskType == "OFFLINE" && address.isDefined), "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
+  require(endDate != null, "endDate cannot be empty")
+  require(!time.isEmpty, "time cannot be empty")
+  require(!status.isEmpty, "status cannot be empty")
+  require((status == TASK_STATUS.POSTED.toString || status == TASK_STATUS.TOAPPROVEREQUEST.toString), "status can be either POSTED or TOAPPROVEREQUEST")
+  require(!requestType.isEmpty, "status cannot be empty")
+  require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
+  require(!hireSthId.isDefined || (hireSthId.isDefined && status == TASK_STATUS.TOAPPROVEREQUEST.toString), "when status is TOAPPROVEREQUEST hireSthId cannot be empty, or when hireSthId is not empty status must be TOAPPROVEREQUEST")
+  require(!hireSthId.isDefined || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
+  require(!taskPrice.isDefined || (taskPrice.get.isPerHour.getOrElse(false) && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
+  require(!taskPrice.isDefined || (taskPrice.get.toRepeat.getOrElse(false) && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
+  require(!taskPrice.isDefined || (taskPrice.get.hasPriceSuggested.getOrElse(false) && taskPrice.get.priceSuggested.isDefined), "when hasPriceSuggested is true priceSuggested cannot be empty")
+  require(requestType != TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString || (
+    requestType == TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString && taskPrice.isDefined && taskPrice.get.nOfHours.isDefined
+    && taskPrice.get.tariffWithFeeForSth.isDefined && taskPrice.get.tariffWithoutFeeForSth.isDefined
+  ), "when requestType is WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF nOfHours,tariffWithFeeForSth and tariffWithoutFeeForSth cannot be empty ")
+}
+
+case class TaskBadges(emailVerBudgetRequired: Option[Boolean],
   fbBudgetRequired: Option[Boolean], linkedInBudgetRequired: Option[Boolean], passportIdBudgetRequired: Option[Boolean],
-  secDocBudgetRequired: Option[Boolean], twitterBudgetRequired: Option[Boolean], webcamBudgetRequired: Option[Boolean]) extends Searchable
+  secDocBudgetRequired: Option[Boolean], twitterBudgetRequired: Option[Boolean], webcamBudgetRequired: Option[Boolean])
+
+case class TaskPrice(hasPriceSuggested: Option[Boolean], priceSuggested: Option[String],
+  isPerHour: Option[Boolean], nOfHours: Option[Int], toRepeat: Option[Boolean], nOfWeeks: Option[Int], tariffWithoutFeeForSth: Option[String],
+  tariffWithFeeForSth: Option[String])
+
+object TaskPriceJsonFormat extends DefaultJsonProtocol {
+  implicit val taskPriceJsonFormat = jsonFormat8(TaskPrice)
+}
+object TaskBadgesJsonFormat extends DefaultJsonProtocol {
+  implicit val taskBadgesJsonFormat = jsonFormat7(TaskBadges)
+}
 
 case class Comment(id: Option[String], userId: String, userName: String, comment: String, dateCreated: Date, taskId: String, status: Option[String], commentId: Option[String], conversation: Boolean) {
   require(!comment.isEmpty, "comment  cannot be empty")
@@ -187,7 +223,10 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   }
   implicit val bidFormat = jsonFormat9(Bid)
   implicit val commentFormat = jsonFormat9(Comment)
-  implicit val taskFormat = jsonFormat22(Task)
+  implicit val taskBadgesFormat = jsonFormat7(TaskBadges)
+  implicit val taskPriceFormat = jsonFormat8(TaskPrice)
+
+  implicit val taskFormat = jsonFormat19(Task)
 }
 
 case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
@@ -200,6 +239,6 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.TaskJsonFormat._
-  implicit val taskFormat = jsonFormat22(Task)
+  implicit val taskFormat = jsonFormat19(Task)
   implicit val tasksFormat = jsonFormat1(Tasks)
 }

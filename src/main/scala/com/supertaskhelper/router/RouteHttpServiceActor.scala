@@ -140,6 +140,28 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             }
           }
         }
+      } ~ path("users" / "skills") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('userId.as[String]) { userId =>
+              ctx =>
+                val perRequestUserActor = createPerUserActor(ctx)
+                perRequestUserActor ! FindSkills(userId)
+            }
+
+          }
+        }
+      } ~ path("users" / "feedbacks") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters('userId.as[String]) { userId =>
+              ctx =>
+                val perRequestUserActor = createPerUserActor(ctx)
+                perRequestUserActor ! FindFeedbacks(userId)
+            }
+
+          }
+        }
       } ~ path("users") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
