@@ -44,15 +44,15 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(endDate != null, "endDate cannot be empty")
   require(!time.isEmpty, "time cannot be empty")
   require(!status.isEmpty, "status cannot be empty")
-  require((status == TASK_STATUS.POSTED.toString || status == TASK_STATUS.TOAPPROVEREQUEST.toString), "status can be either POSTED or TOAPPROVEREQUEST")
+  require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:"+TASK_STATUS.values())
   require(!requestType.isEmpty, "status cannot be empty")
   require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
   require(!hireSthId.isDefined || (hireSthId.isDefined && status == TASK_STATUS.TOAPPROVEREQUEST.toString), "when status is TOAPPROVEREQUEST hireSthId cannot be empty, or when hireSthId is not empty status must be TOAPPROVEREQUEST")
   require(!hireSthId.isDefined || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
   require(!userId.isEmpty && (ObjectId.isValid(userId)), "the userId is invalid")
-  require(!taskPrice.isDefined || (taskPrice.get.isPerHour.getOrElse(false) && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
-  require(!taskPrice.isDefined || (taskPrice.get.toRepeat.getOrElse(false) && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
-  require(!taskPrice.isDefined || (taskPrice.get.hasPriceSuggested.getOrElse(false) && taskPrice.get.priceSuggested.isDefined), "when hasPriceSuggested is true priceSuggested cannot be empty")
+  require(!taskPrice.isDefined || (!taskPrice.get.isPerHour.isDefined) || (!taskPrice.get.isPerHour.get)|| (taskPrice.get.isPerHour.get && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
+  require(!taskPrice.isDefined || (!taskPrice.get.toRepeat.isDefined) || (!taskPrice.get.toRepeat.get)|| (taskPrice.get.toRepeat.get && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
+  require(!taskPrice.isDefined || (!taskPrice.get.hasPriceSuggested.isDefined) || (!taskPrice.get.hasPriceSuggested.get) || (taskPrice.get.hasPriceSuggested.get && taskPrice.get.priceSuggested.isDefined), "when hasPriceSuggested is true priceSuggested cannot be empty")
   require(requestType != TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString || (
     requestType == TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString && taskPrice.isDefined && taskPrice.get.nOfHours.isDefined
     && taskPrice.get.tariffWithFeeForSth.isDefined && taskPrice.get.tariffWithoutFeeForSth.isDefined

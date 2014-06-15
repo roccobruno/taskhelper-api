@@ -87,12 +87,15 @@ trait TaskService extends Service with ConverterUtil with CityService {
       taskResult.getAs[Boolean]("passportIdBudgetRequired"), taskResult.getAs[Boolean]("twitterBudgetRequired"), taskResult.getAs[Boolean]("secDocBudgetRequired"), taskResult.getAs[Boolean]("webcamBudgetRequired"))
 
     val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
+    val tariffWithoutFeeForSTH:Option[String] = if(priceObj!=null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
+    val tariffWithFeeForSTH:Option[String] = if(priceObj!=null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
+
 
     val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
       taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
       taskResult.getAs[Boolean]("repeat"),
       Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
-      Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")), Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")))
+      tariffWithoutFeeForSTH, tariffWithFeeForSTH)
 
     import _root_.scala.collection.JavaConverters._
     val task = Task(
@@ -112,7 +115,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       categoryId = taskResult.getAs[String]("categoryId"),
       taskType = taskResult.getAs[String]("type").get,
       badges = Option(badg),
-      requestType = taskResult.getAs[String]("requestType").get,
+      requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
       hireSthId = taskResult.getAs[String]("hireSthId"),
       taskPrice = Option(taskPrice)
     )
@@ -122,7 +125,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
     catch {
       case x:Exception => {
         logger.debug("Problem in building the Task object for id:{}",taskResult.getAs[ObjectId]("_id"))
-        logger.debug("error :{}",x.getMessage)
+        logger.debug("error :{}",x)
       }
         None
     }
