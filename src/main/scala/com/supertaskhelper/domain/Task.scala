@@ -40,7 +40,7 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(!title.isEmpty, "title cannot be empty")
   require(!description.isEmpty, "description cannot be empty")
   require(!taskType.isEmpty, "taskType cannot be empty")
-  require((taskType == "ONLINE" && address.isEmpty) || (taskType == "OFFLINE" && address.isDefined), "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
+  require(taskType == "ONLINE" || taskType == "OFFLINE" , "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
   require(endDate != null, "endDate cannot be empty")
   require(!time.isEmpty, "time cannot be empty")
   require(!status.isEmpty, "status cannot be empty")
