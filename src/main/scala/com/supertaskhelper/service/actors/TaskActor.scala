@@ -4,7 +4,7 @@ import akka.actor.{ ActorLogging, Actor }
 import akka.event.LoggingReceive
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.util.ActorFactory
-import com.supertaskhelper.domain.{ Tasks, TaskParams }
+import com.supertaskhelper.domain.{Task, Tasks, TaskParams}
 import com.supertaskhelper.service.TaskService
 
 /**
@@ -20,13 +20,14 @@ class TaskActor extends Actor with ActorLogging with ActorFactory with TaskServi
     case params: FindTask => {
 
       val task = findTask(params.params)
-      sender ! (if (task.size > 0) Tasks(task) else TaskNotFound(""))
+      sender ! (if (task.size > 0) Tasks(task.filter( _.isDefined ).map( x => x.get )) else TaskNotFound(""))
     }
 
     case message @ _ =>
       log.warning(s"Unknown message received by TaskActor: ${message}")
 
   }
+
 }
 
 case class TaskNotFound(taskId: String)

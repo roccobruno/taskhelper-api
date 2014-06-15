@@ -18,6 +18,7 @@ import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_TYPE, COMMENT_
 import org.bson.types.ObjectId
 import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.supertaskhelper.util.ConverterUtil
+import org.slf4j.LoggerFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,9 +29,11 @@ import com.supertaskhelper.util.ConverterUtil
  */
 trait TaskService extends Service with ConverterUtil with CityService {
 
+  val logger = LoggerFactory.getLogger(classOf[TaskService])
+
   val conn = MongoFactory.getConnection
 
-  def findTask(params: TaskParams): Seq[Task] = {
+  def findTask(params: TaskParams): Seq[Option[Task]] = {
 
     val q = buildQuery(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
@@ -60,8 +63,9 @@ trait TaskService extends Service with ConverterUtil with CityService {
     builder.result
   }
 
-  private def buildTask(taskResult: DBObject, distance: Option[String]): Task = {
+  private def buildTask(taskResult: DBObject, distance: Option[String]): Option[Task] = {
 
+    try{
     val bidss: Option[Seq[Bid]] =
       if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
         Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate.get after _.createdDate.get)
@@ -112,7 +116,17 @@ trait TaskService extends Service with ConverterUtil with CityService {
       hireSthId = taskResult.getAs[String]("hireSthId"),
       taskPrice = Option(taskPrice)
     )
-    task //return the task object
+    Option(task) //return the task object
+
+    }
+    catch {
+      case x:Exception => {
+        logger.debug("Problem in building the Task object for id:{}",taskResult.getAs[ObjectId]("_id"))
+        logger.debug("error :{}",x.getMessage)
+      }
+        None
+    }
+
   }
 
   def deleteTask(taskId: String) {
@@ -288,8 +302,8 @@ trait TaskService extends Service with ConverterUtil with CityService {
     val result = collection findOne q
     if (result != None) {
       val taskResult = result.get
+      buildTask(taskResult, None)
 
-      Option(buildTask(taskResult, None))
     } else
       None
   }
@@ -316,7 +330,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
 
   def createTask(task: Task, langauge: String) = {
     val collection = MongoFactory.getCollection("task")
-    val doc = if (task.address != null) buildMongodBObjTaskWithAddress(task, true) else buildMongodBObjTaskWithAddress(task, false)
+    val doc = if (task.address.isDefined) buildMongodBObjTaskWithAddress(task, true) else buildMongodBObjTaskWithAddress(task, false)
     collection.save(doc)
 
     if (task.taskType == "OFFLINE" && task.address.isDefined) {

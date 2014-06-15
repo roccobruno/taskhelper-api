@@ -8,6 +8,8 @@ import org.bson.types.ObjectId
 import com.supertaskhelper.domain.search.Searchable
 import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_STATUS }
 
+
+
 /**
  * Created with IntelliJ IDEA.
  * User: r.bruno@london.net-a-porter.com
@@ -47,6 +49,7 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
   require(!hireSthId.isDefined || (hireSthId.isDefined && status == TASK_STATUS.TOAPPROVEREQUEST.toString), "when status is TOAPPROVEREQUEST hireSthId cannot be empty, or when hireSthId is not empty status must be TOAPPROVEREQUEST")
   require(!hireSthId.isDefined || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
+  require(!userId.isEmpty && (ObjectId.isValid(userId)), "the userId is invalid")
   require(!taskPrice.isDefined || (taskPrice.get.isPerHour.getOrElse(false) && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
   require(!taskPrice.isDefined || (taskPrice.get.toRepeat.getOrElse(false) && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
   require(!taskPrice.isDefined || (taskPrice.get.hasPriceSuggested.getOrElse(false) && taskPrice.get.priceSuggested.isDefined), "when hasPriceSuggested is true priceSuggested cannot be empty")
@@ -94,13 +97,13 @@ case class Comments(comments: Seq[Comment])
 object CommentAnswerJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
@@ -113,13 +116,13 @@ object CommentAnswerJsonFormat extends DefaultJsonProtocol {
 object CommentJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
@@ -132,13 +135,13 @@ object CommentJsonFormat extends DefaultJsonProtocol {
 object CommentsJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
@@ -152,13 +155,13 @@ object CommentsJsonFormat extends DefaultJsonProtocol {
 object BidJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
@@ -171,13 +174,13 @@ object BidJsonFormat extends DefaultJsonProtocol {
 object BidsJsonFormat extends DefaultJsonProtocol {
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
@@ -195,13 +198,13 @@ object TaskJsonFormat extends DefaultJsonProtocol {
 
   implicit object DateFormat extends RootJsonFormat[Date] {
     def write(c: Date) = {
-      val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+      val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
       JsString(dateStringFormat.format(c))
     }
 
     def read(value: JsValue) = value match {
       case JsString(value) => {
-        val dateStringFormat = new SimpleDateFormat("dd/MM/yyyy")
+        val dateStringFormat = new SimpleDateFormat(Constants.DATE_FORMAT)
         dateStringFormat.parse(value)
       }
 
