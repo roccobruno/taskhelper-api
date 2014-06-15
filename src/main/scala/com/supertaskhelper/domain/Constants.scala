@@ -9,6 +9,6 @@ package com.supertaskhelper.domain
  */
 object Constants {
 
-  val DATE_FORMAT = "dd-MM-yyyy'T'HH:mm'Z'"
+  val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm'Z'"
 
 }

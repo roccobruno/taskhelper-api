@@ -20,7 +20,7 @@ import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import spray.routing.{MalformedQueryParamRejection, ValidationRejection}
 import com.supertaskhelper.router.RouteHttpService
-import com.supertaskhelper.common.enums.TASK_STATUS
+import com.supertaskhelper.common.enums.{TASK_TYPE, TASK_STATUS}
 
 /**
  * Created with IntelliJ IDEA.
@@ -43,7 +43,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
 
   val task = Task(None, "Api Task Test", "Api Task test desc", new Date(), Option(address), new Date(),
     "17.00", TASK_STATUS.TOAPPROVEREQUEST.toString, "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
-    Option("52515bb0e4b094388a43ca39"), "OFFLINE",Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
+    Option("52515bb0e4b094388a43ca39"), TASK_TYPE.OFFLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
 
   )
 
