@@ -31,11 +31,11 @@ import com.supertaskhelper.common.enums.{TASK_TYPE, TASK_STATUS}
  */
 class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService {
 
-  implicit val routeTestTimeout = RouteTestTimeout(5 seconds)
+  implicit val routeTestTimeout = RouteTestTimeout(600 seconds)
 
   val location = Location("40.1508677", "16.2848214")
   val address = Address(Option("via carlo levi API"), Option("Senise"), "Italia", Option(location),
-    "85038", Option("Basilicata")
+    Option("85038"), Option("Basilicata")
   )
 
   val taskPrice = TaskPrice(Option(true),Option("10"),Option(true),Option(2),Option(true),Option(3),Option("2"),Option("3"))
@@ -46,6 +46,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
     Option("52515bb0e4b094388a43ca39"), TASK_TYPE.OFFLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
 
   )
+
+
 
   def actorRefFactory = system
 
@@ -66,6 +68,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         taskId = Option(responseAs[Response].id)
         println(taskId)
       }
+
+
 
 
 
@@ -235,6 +239,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
 
 
       }
+
+
 
       import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
       Get("/api/tasks/category") ~> route ~>check {

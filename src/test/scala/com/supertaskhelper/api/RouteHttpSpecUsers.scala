@@ -38,7 +38,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
 
   val location = Location("40.1508677", "16.2848214")
   val address = Address(Option("via carlo levi API"), Option("Senise"), "Italia", Option(location),
-    "85038", Option("Basilicata")
+    Option("85038"), Option("Basilicata")
   )
 
 

@@ -80,7 +80,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
     val locationObj = if (addobj != null) addobj.get("location").asInstanceOf[BasicDBObject] else null
     val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
-    val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione")))
+    val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, Option(addobj.getString("postcode")), Option(addobj.getString("regione")))
 
     val badg = TaskBadges(taskResult.getAs[Boolean]("emailVerBudgetRequired"),
       taskResult.getAs[Boolean]("linkedInBudgetRequired"), taskResult.getAs[Boolean]("fbBudgetRequired"),
@@ -327,8 +327,22 @@ trait TaskService extends Service with ConverterUtil with CityService {
   def getAddressForTasksOnline {
 
     val location = Location("41.87194", "12.56738")
-    val address = Address(Option(""), Option(""), "ITALIA", Option(location), "", Option(""))
+    val address = Address(Option(""), Option(""), "ITALIA", Option(location), Option(""), Option(""))
     address
+  }
+
+  def getAddressForTaskOnlineMongodbObject:MongoDBObject= {
+    MongoDBObject(
+
+      "country" -> "IT",
+
+      "regione" -> "",
+      "address" -> "",
+      "location" -> MongoDBObject(
+        "latitude" -> "41.87194",
+        "longitude" -> "12.56738"
+      )
+    )
   }
 
   def createTask(task: Task, langauge: String) = {
@@ -380,7 +394,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       "webcamBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.webcamBudgetRequired else false),
       "passportIdBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.passportIdBudgetRequired else false),
 
-      "address" -> (if (useTaskAddress) getMongoDBObjFromAddress(task.address.get) else getAddressForTasksOnline)
+      "address" -> (if (useTaskAddress) getMongoDBObjFromAddress(task.address.get) else getAddressForTaskOnlineMongodbObject)
 
     )
 

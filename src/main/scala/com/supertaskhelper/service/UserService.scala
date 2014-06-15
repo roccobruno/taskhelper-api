@@ -142,7 +142,8 @@ trait UserService extends Service with ConverterUtil {
       val locationObj = if (addobj != null) addobj.getAsOrElse[BasicDBObject]("location", null) else null
       val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
-      val address: Option[Address] = if (addobj != null) Option(Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, addobj.getString("postcode"), Option(addobj.getString("regione"))))
+      val address: Option[Address] = if (addobj != null) Option(Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location,
+        Option(addobj.getString("postcode")), Option(addobj.getString("regione"))))
       else None
 
       user = User(

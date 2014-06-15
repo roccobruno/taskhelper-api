@@ -30,7 +30,7 @@ case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue
   require(!taskId.isEmpty, "taskId  cannot be empty")
   require(ObjectId.isValid(taskId.get), "taskId provided not valid")
 }
-case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: String, regione: Option[String])
+case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: Option[String], regione: Option[String])
 
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
     bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
