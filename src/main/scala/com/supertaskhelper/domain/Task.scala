@@ -48,7 +48,7 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(!requestType.isEmpty, "status cannot be empty")
   require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
   require(status != TASK_STATUS.TOAPPROVEREQUEST.toString || (status == TASK_STATUS.TOAPPROVEREQUEST.toString && hireSthId.isDefined), "when status is TOAPPROVEREQUEST hireSthId cannot be empty")
-  require(!hireSthId.isDefined || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
+  require(!hireSthId.isDefined || hireSthId.get.isEmpty || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
   require(!userId.isEmpty && (ObjectId.isValid(userId)), "the userId is invalid")
   require(!taskPrice.isDefined || (!taskPrice.get.isPerHour.isDefined) || (!taskPrice.get.isPerHour.get)|| (taskPrice.get.isPerHour.get && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
   require(!taskPrice.isDefined || (!taskPrice.get.toRepeat.isDefined) || (!taskPrice.get.toRepeat.get)|| (taskPrice.get.toRepeat.get && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
