@@ -47,7 +47,7 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:"+TASK_STATUS.values())
   require(!requestType.isEmpty, "status cannot be empty")
   require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
-  require(!hireSthId.isDefined || (hireSthId.isDefined && status == TASK_STATUS.TOAPPROVEREQUEST.toString), "when status is TOAPPROVEREQUEST hireSthId cannot be empty, or when hireSthId is not empty status must be TOAPPROVEREQUEST")
+  require(status != TASK_STATUS.TOAPPROVEREQUEST.toString || (status == TASK_STATUS.TOAPPROVEREQUEST.toString && hireSthId.isDefined), "when status is TOAPPROVEREQUEST hireSthId cannot be empty")
   require(!hireSthId.isDefined || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
   require(!userId.isEmpty && (ObjectId.isValid(userId)), "the userId is invalid")
   require(!taskPrice.isDefined || (!taskPrice.get.isPerHour.isDefined) || (!taskPrice.get.isPerHour.get)|| (taskPrice.get.isPerHour.get && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
