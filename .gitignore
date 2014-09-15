@@ -63,3 +63,4 @@ webapp/www/shared/build/images/generated/
 # Ignore Node.js dependencies
 webapp/www/www-build-conf/node_modules
 
+.elasticbeanstalk/
