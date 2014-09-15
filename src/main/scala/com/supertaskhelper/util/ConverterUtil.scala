@@ -12,8 +12,6 @@ import com.supertaskhelper.domain.{ Task, Address }
  */
 trait ConverterUtil {
 
-
-
   def getMongoDBObjFromAddress(address: Address) = {
     MongoDBObject(
       "city" -> address.city,

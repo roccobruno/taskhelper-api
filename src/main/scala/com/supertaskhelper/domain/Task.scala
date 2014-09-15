@@ -8,8 +8,6 @@ import org.bson.types.ObjectId
 import com.supertaskhelper.domain.search.Searchable
 import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_STATUS }
 
-
-
 /**
  * Created with IntelliJ IDEA.
  * User: r.bruno@london.net-a-porter.com
@@ -40,18 +38,18 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
   require(!title.isEmpty, "title cannot be empty")
   require(!description.isEmpty, "description cannot be empty")
   require(!taskType.isEmpty, "taskType cannot be empty")
-  require(taskType == "ONLINE" || taskType == "OFFLINE" , "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
+  require(taskType == "ONLINE" || taskType == "OFFLINE", "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
   require(endDate != null, "endDate cannot be empty")
   require(!time.isEmpty, "time cannot be empty")
   require(!status.isEmpty, "status cannot be empty")
-  require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:"+TASK_STATUS.values())
+  require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:" + TASK_STATUS.values())
   require(!requestType.isEmpty, "status cannot be empty")
   require(!TASK_REQUEST_TYPE.valueOf(requestType).toString.isEmpty, "requestType can only be one of:" + TASK_REQUEST_TYPE.values())
   require(status != TASK_STATUS.TOAPPROVEREQUEST.toString || (status == TASK_STATUS.TOAPPROVEREQUEST.toString && hireSthId.isDefined), "when status is TOAPPROVEREQUEST hireSthId cannot be empty")
   require(!hireSthId.isDefined || hireSthId.get.isEmpty || (ObjectId.isValid(hireSthId.get)), "the hireSthId is invalid")
   require(!userId.isEmpty && (ObjectId.isValid(userId)), "the userId is invalid")
-  require(!taskPrice.isDefined || (!taskPrice.get.isPerHour.isDefined) || (!taskPrice.get.isPerHour.get)|| (taskPrice.get.isPerHour.get && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
-  require(!taskPrice.isDefined || (!taskPrice.get.toRepeat.isDefined) || (!taskPrice.get.toRepeat.get)|| (taskPrice.get.toRepeat.get && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
+  require(!taskPrice.isDefined || (!taskPrice.get.isPerHour.isDefined) || (!taskPrice.get.isPerHour.get) || (taskPrice.get.isPerHour.get && taskPrice.get.nOfHours.isDefined), "when isPerHour is true nOfHours cannot be empty")
+  require(!taskPrice.isDefined || (!taskPrice.get.toRepeat.isDefined) || (!taskPrice.get.toRepeat.get) || (taskPrice.get.toRepeat.get && taskPrice.get.nOfWeeks.isDefined), "when toRepeat is true nOfWeeks cannot be empty")
   require(!taskPrice.isDefined || (!taskPrice.get.hasPriceSuggested.isDefined) || (!taskPrice.get.hasPriceSuggested.get) || (taskPrice.get.hasPriceSuggested.get && taskPrice.get.priceSuggested.isDefined), "when hasPriceSuggested is true priceSuggested cannot be empty")
   require(requestType != TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString || (
     requestType == TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString && taskPrice.isDefined && taskPrice.get.nOfHours.isDefined

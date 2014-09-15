@@ -65,68 +65,67 @@ trait TaskService extends Service with ConverterUtil with CityService {
 
   private def buildTask(taskResult: DBObject, distance: Option[String]): Option[Task] = {
 
-    try{
-    val bidss: Option[Seq[Bid]] =
-      if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
-        Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate.get after _.createdDate.get)
+    try {
+      val bidss: Option[Seq[Bid]] =
+        if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
+          Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate.get after _.createdDate.get)
+          )
+        } else None
+
+      val comms: Option[Seq[Comment]] = if (taskResult.get("comments").asInstanceOf[BasicDBList] != null) {
+        Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated before _.dateCreated)
         )
       } else None
+      val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
+      val locationObj = if (addobj != null) addobj.get("location").asInstanceOf[BasicDBObject] else null
+      val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
 
-    val comms: Option[Seq[Comment]] = if (taskResult.get("comments").asInstanceOf[BasicDBList] != null) {
-      Option(taskResult.get("comments").asInstanceOf[BasicDBList].map(x => buildComment(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.dateCreated before _.dateCreated)
+      val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, Option(addobj.getString("postcode")), Option(addobj.getString("regione")))
+
+      val badg = TaskBadges(taskResult.getAs[Boolean]("emailVerBudgetRequired"),
+        taskResult.getAs[Boolean]("linkedInBudgetRequired"), taskResult.getAs[Boolean]("fbBudgetRequired"),
+        taskResult.getAs[Boolean]("passportIdBudgetRequired"), taskResult.getAs[Boolean]("twitterBudgetRequired"), taskResult.getAs[Boolean]("secDocBudgetRequired"), taskResult.getAs[Boolean]("webcamBudgetRequired"))
+
+      val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
+      val tariffWithoutFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
+      val tariffWithFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
+
+      val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
+        taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
+        taskResult.getAs[Boolean]("repeat"),
+        Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
+        tariffWithoutFeeForSTH, tariffWithFeeForSTH)
+
+      import _root_.scala.collection.JavaConverters._
+      val task = Task(
+        title = taskResult.getAs[String]("title").getOrElse(""),
+        id = taskResult.getAs[ObjectId]("_id"),
+        description = taskResult.getAs[String]("description").getOrElse(""),
+        createdDate = taskResult.getAs[java.util.Date]("createdDate").get,
+        address = Option(address),
+        endDate = taskResult.getAs[java.util.Date]("endDate").getOrElse(new Date()),
+        time = taskResult.getAs[String]("time").getOrElse(""),
+        status = taskResult.getAs[String]("status").getOrElse(""),
+        userId = taskResult.getAs[String]("userId").getOrElse(""),
+        bids = bidss,
+        comments = comms,
+        distance = distance,
+        category = taskResult.getAs[String]("category"),
+        categoryId = taskResult.getAs[String]("categoryId"),
+        taskType = taskResult.getAs[String]("type").get,
+        badges = Option(badg),
+        requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
+        hireSthId = taskResult.getAs[String]("hireSthId"),
+        taskPrice = Option(taskPrice)
       )
-    } else None
-    val addobj = taskResult.get("address").asInstanceOf[BasicDBObject]
-    val locationObj = if (addobj != null) addobj.get("location").asInstanceOf[BasicDBObject] else null
-    val location: Option[Location] = if (locationObj != null) { Option(Location(locationObj.getString("longitude"), locationObj.getString("latitude"))) } else None
+      Option(task) //return the task object
 
-    val address = Address(Option(addobj.getString("address")), Option(addobj.getString("city")), addobj.getString("country"), location, Option(addobj.getString("postcode")), Option(addobj.getString("regione")))
-
-    val badg = TaskBadges(taskResult.getAs[Boolean]("emailVerBudgetRequired"),
-      taskResult.getAs[Boolean]("linkedInBudgetRequired"), taskResult.getAs[Boolean]("fbBudgetRequired"),
-      taskResult.getAs[Boolean]("passportIdBudgetRequired"), taskResult.getAs[Boolean]("twitterBudgetRequired"), taskResult.getAs[Boolean]("secDocBudgetRequired"), taskResult.getAs[Boolean]("webcamBudgetRequired"))
-
-    val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
-    val tariffWithoutFeeForSTH:Option[String] = if(priceObj!=null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
-    val tariffWithFeeForSTH:Option[String] = if(priceObj!=null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
-
-
-    val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
-      taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
-      taskResult.getAs[Boolean]("repeat"),
-      Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
-      tariffWithoutFeeForSTH, tariffWithFeeForSTH)
-
-    import _root_.scala.collection.JavaConverters._
-    val task = Task(
-      title = taskResult.getAs[String]("title").getOrElse(""),
-      id = taskResult.getAs[ObjectId]("_id"),
-      description = taskResult.getAs[String]("description").getOrElse(""),
-      createdDate = taskResult.getAs[java.util.Date]("createdDate").get,
-      address = Option(address),
-      endDate = taskResult.getAs[java.util.Date]("endDate").getOrElse(new Date()),
-      time = taskResult.getAs[String]("time").getOrElse(""),
-      status = taskResult.getAs[String]("status").getOrElse(""),
-      userId = taskResult.getAs[String]("userId").getOrElse(""),
-      bids = bidss,
-      comments = comms,
-      distance = distance,
-      category = taskResult.getAs[String]("category"),
-      categoryId = taskResult.getAs[String]("categoryId"),
-      taskType = taskResult.getAs[String]("type").get,
-      badges = Option(badg),
-      requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
-      hireSthId = taskResult.getAs[String]("hireSthId"),
-      taskPrice = Option(taskPrice)
-    )
-    Option(task) //return the task object
-
-    }
-    catch {
-      case x:Exception => {
-        logger.debug("Problem in building the Task object for id:{}",taskResult.getAs[ObjectId]("_id"))
-        logger.debug("error :{}",x)
-      }
+    } catch {
+      case x: Exception =>
+        {
+          logger.debug("Problem in building the Task object for id:{}", taskResult.getAs[ObjectId]("_id"))
+          logger.debug("error :{}", x)
+        }
         None
     }
 
@@ -331,7 +330,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
     address
   }
 
-  def getAddressForTaskOnlineMongodbObject:MongoDBObject= {
+  def getAddressForTaskOnlineMongodbObject: MongoDBObject = {
     MongoDBObject(
 
       "country" -> "IT",

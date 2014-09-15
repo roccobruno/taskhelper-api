@@ -11,7 +11,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 
 import com.supertaskhelper.common.domain.{ Password }
 import com.mongodb.casbah.commons.MongoDBObject
-import com.supertaskhelper.common.enums.{TASK_TYPE, ACCOUNT_STATUS}
+import com.supertaskhelper.common.enums.{ TASK_TYPE, ACCOUNT_STATUS }
 import java.util
 import com.typesafe.config.ConfigFactory
 import com.mongodb.BasicDBObject
@@ -41,15 +41,15 @@ trait UserService extends Service with ConverterUtil {
     val fields = MongoDBObject("onlineSkills" -> 1, "offlineSkills" -> 1)
     var res = collection findOne (q, fields)
 
-    var skills:Seq[TaskCategory] = Seq()
+    var skills: Seq[TaskCategory] = Seq()
 
     if (res.isDefined) {
       val userResult = res.get
       if (userResult.get("onlineSkills").asInstanceOf[BasicDBList] != null) {
-        skills = skills ++ userResult.get("onlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject],TASK_TYPE.ONLINE.toString)).toSeq
+        skills = skills ++ userResult.get("onlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject], TASK_TYPE.ONLINE.toString)).toSeq
       }
       if (userResult.get("offlineSkills").asInstanceOf[BasicDBList] != null) {
-       skills =  skills ++ userResult.get("offlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject],TASK_TYPE.OFFLINE.toString)).toSeq
+        skills = skills ++ userResult.get("offlineSkills").asInstanceOf[BasicDBList].map(x => buildTaskCategory(x.asInstanceOf[BasicDBObject], TASK_TYPE.OFFLINE.toString)).toSeq
       }
 
       TaskCategories(skills)
@@ -66,7 +66,7 @@ trait UserService extends Service with ConverterUtil {
     val fields = MongoDBObject("feedbacks" -> 1)
     var res = collection findOne (q, fields)
 
-    var skills:Seq[Feedback] = Seq()
+    var skills: Seq[Feedback] = Seq()
 
     if (res.isDefined) {
       val userResult = res.get
@@ -93,7 +93,7 @@ trait UserService extends Service with ConverterUtil {
     )
   }
 
-  private def buildTaskCategory(category: DBObject,tasktype:String): TaskCategory = {
+  private def buildTaskCategory(category: DBObject, tasktype: String): TaskCategory = {
     TaskCategory(
       id = category.getAs[ObjectId]("_id").get.toString,
       categoryType = Option(tasktype),

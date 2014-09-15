@@ -20,10 +20,13 @@ class UserActor extends Actor with ActorLogging with UserService {
     case f: FindUser => {
 
       val res = findUserById(f.id)
+      log.info(sender.toString())
       if (res._1)
         sender ! copyUser(res._2, f.distance)
       else
         sender ! UserNotFound(f.id)
+
+      context.stop(self)
 
     }
   }

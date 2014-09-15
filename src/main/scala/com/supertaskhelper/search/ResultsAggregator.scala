@@ -1,6 +1,6 @@
 package com.supertaskhelper.search
 
-import akka.actor.{ ReceiveTimeout, ActorLogging, Actor, ActorRef }
+import akka.actor._
 import java.util.Locale
 import com.supertaskhelper.Settings
 
@@ -12,7 +12,37 @@ import org.bson.types.ObjectId
 import spray.json.DefaultJsonProtocol
 import com.supertaskhelper.domain.search.Searchable
 import com.supertaskhelper.search.ResultsAggregator.{ Enrichable, NotEnriched, Enriched }
-import com.supertaskhelper.service.actors.{ UserNotFound, TaskNotFound, FindUser }
+import com.supertaskhelper.service.actors._
+import com.supertaskhelper.search.ResultsAggregator.NotEnriched
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.domain.User
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.Tasks
+import com.supertaskhelper.search.ResultsAggregator.Enriched
+import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
+import com.supertaskhelper.search.SearchResultList
+import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.search.ResultsAggregator.NotEnriched
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.domain.User
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.Tasks
+import com.supertaskhelper.search.ResultsAggregator.Enriched
+import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
+import com.supertaskhelper.search.SearchResultList
+import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.service.actors.TaskNotFound
+import com.supertaskhelper.search.ResultsAggregator.NotEnriched
+import com.supertaskhelper.domain.TaskParams
+import com.supertaskhelper.service.actors.UserNotFound
+import com.supertaskhelper.domain.User
+import com.supertaskhelper.service.actors.FindUser
+import com.supertaskhelper.domain.Task
+import com.supertaskhelper.domain.Tasks
+import com.supertaskhelper.search.ResultsAggregator.Enriched
+import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
+import com.supertaskhelper.search.SearchResultList
+import com.supertaskhelper.service.TaskServiceActor.FindTask
 
 /**
  * Created with IntelliJ IDEA.
@@ -49,7 +79,7 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
     case TaskNotFound(_) =>
       stop(self)
 
-    case SearchResults(_, docs) =>
+    case SearchResults(_, docs) => {
       if (docs.isEmpty) replyTo ! SearchResultList(Nil, Nil)
 
       // We have received a list of search results for the SOLR search core
@@ -57,11 +87,12 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
 
       // Let's fire a request to the PS API for each task
       docs.foreach(doc =>
-        (if (doc.otype.getOrElse("TASK") == "TASK") { taskActorFinder ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance)) }
-        else { userTaskFinder ! FindUser(doc.id, doc.distance) }
+        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance)) }
+        else { createUS ! FindUser(doc.id, doc.distance) }
         ))
-
-    case p: Tasks =>
+    }
+    case p: Tasks => {
+      log.info(p.toString)
       // We have received a full task back from the TaskFinder
       // Let's replace any non-enriched tasks (BasicTask) for this pid and channel ID with this FullTask
       for (x <- p.tasks) {
@@ -81,6 +112,8 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
         // After every enrichment, check if we are finished
         checkForFinished
       }
+
+    }
 
     case u: User =>
       // We have received a full task back from the TaskFinder
@@ -102,6 +135,11 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
         // After every enrichment, check if we are finished
         checkForFinished
       }
+
+    case message @ _ => {
+      log.warning(s"Unknown message received by SearchActor: ${message}")
+      context.stop(self)
+    }
   }
 
   override def unhandled(x: Any) = {
@@ -135,6 +173,15 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
   def userEnrichedSoFar = result.collect {
     case Enriched(x) if x.isInstanceOf[User] => x
   }
+
+  def createTA(): ActorRef = {
+    context.actorOf(Props(classOf[TaskActor]))
+  }
+
+  def createUS(): ActorRef = {
+    context.actorOf(Props(classOf[UserActor]))
+  }
+
 }
 
 object ResultsAggregator {
