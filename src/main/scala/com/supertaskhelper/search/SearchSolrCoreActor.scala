@@ -93,7 +93,7 @@ trait SearchSolrCoreActor
   }
 
   private def buildQuery(s: SearchParams): Map[String, String] = {
-    val sanitisedTerms = orStatement("search_field", s.terms.split("\\s").toSeq.map(sanitiseTerm))
+    val sanitisedTerms = orStatement("search_field", s.terms.getOrElse("").split("\\s").toSeq.map(sanitiseTerm))
     val tesrmsWitType = s.otype match {
       case None => sanitisedTerms
       case _ => {
@@ -105,10 +105,10 @@ trait SearchSolrCoreActor
     if (s.sort.getOrElse("createdDate desc") contains ("position")) {
       Map(
         "q" -> s"$tesrmsWitType",
-        "sort" -> "geodist() desc",
+        "sort" -> "geodist() asc",
         "q.op" -> "AND",
         "wt" -> "json",
-        "start" -> s.page.getOrElse(0).toString,
+        "start" -> getPage(s.page, s.sizePage),
         "rows" -> s.sizePage.getOrElse(10).toString,
         "defType" -> "edismax",
         "fl" -> "_dist_:geodist(),type,id",
@@ -118,7 +118,7 @@ trait SearchSolrCoreActor
     } else {
       Map(
         "q" -> s"$tesrmsWitType",
-        "fl" -> "_dist_:score,type,id",
+        "fl" -> "score,type,id,_dist_:score",
         "sort" -> s.sort.getOrElse("score desc"),
         "q.op" -> "AND",
         "wt" -> "json",
@@ -130,12 +130,20 @@ trait SearchSolrCoreActor
     }
   }
 
+  private def getPage(page: Option[Int], sizePage: Option[Int]): String = {
+    if (page.isDefined)
+      (((page.get - 1) * sizePage.getOrElse(10)) + 1).toString
+    else {
+      0.toString
+    }
+  }
+
   /**
    * Makes a SOLR query like:
    *  AND (field:1 OR field:2 OR field:3)
    */
   def orStatement(field: String, values: Seq[Any]) =
-    if (values.isEmpty) ""
+    if (values.isEmpty || (values.seq.size == 1 && values.seq(0) == "")) "*:*"
     else values.mkString(s" ($field:", s" OR $field:", ")")
 
   /**

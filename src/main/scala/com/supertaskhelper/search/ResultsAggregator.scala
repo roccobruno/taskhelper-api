@@ -73,11 +73,20 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
       log.error("Timed out whilst enriching tasks {}", result)
       stop(self)
 
-    case UserNotFound(_) =>
-      stop(self)
+    case UserNotFound(userId) => {
+      val enrich = result.filter(_.id != new ObjectId(userId))
+      result = enrich
+      // After every enrichment, check if we are finished
+      checkForFinished
+    }
 
-    case TaskNotFound(_) =>
-      stop(self)
+    case TaskNotFound(taskId) => {
+      val enrich = result.filter(_.id != new ObjectId(taskId))
+      result = enrich
+      // After every enrichment, check if we are finished
+      checkForFinished
+    }
+    //stop(self)
 
     case SearchResults(_, docs) => {
       if (docs.isEmpty) replyTo ! SearchResultList(Nil, Nil)
@@ -188,6 +197,7 @@ object ResultsAggregator {
 
   trait Enrichable {
     def toTask: Searchable
+    def id: ObjectId
 
   }
 
@@ -195,10 +205,12 @@ object ResultsAggregator {
     def toUser: User
   }
   case class NotEnriched(taskId: ObjectId) extends Enrichable {
+    def id = taskId
     def toTask = throw new NoSuchElementException("Cannot covert search result to task as it not been enriched with data from PS API")
   }
   case class Enriched(prod: Searchable) extends Enrichable {
     def toTask = prod
+    def id = null
   }
 
 }

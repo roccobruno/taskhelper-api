@@ -35,6 +35,7 @@ class SearchActor(httpRequestContext: RequestContext) extends Actor with ActorLo
     }
 
     case s: SearchResultList => {
+      log.debug(s"results:${s}")
       httpRequestContext.complete(s)
       context.stop(self)
     }
