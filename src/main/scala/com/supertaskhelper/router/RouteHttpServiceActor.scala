@@ -105,7 +105,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
   val route: Route =
     pathPrefix("api") {
       path("status") {
-        complete(Status("API-STH is running Ciao"))
+        complete(Status("API-STH is running"))
       } ~ path("login") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
