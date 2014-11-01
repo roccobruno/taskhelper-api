@@ -1,23 +1,16 @@
 package com.supertaskhelper.service
 
-import com.supertaskhelper.MongoFactory
-import com.mongodb.casbah.commons.MongoDBObject
-import com.supertaskhelper.domain._
-import com.supertaskhelper.domain.TaskJsonFormat._
-import com.mongodb.casbah.commons.conversions.MongoConversionHelper
-import org.bson.{ BSON, Transformer }
-import com.mongodb.casbah.Imports._
-import com.mongodb.BasicDBObject
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.Location
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Address
-import com.supertaskhelper.domain.ResponseJsonFormat._
 import java.util.Date
-import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_TYPE, COMMENT_STATUS }
-import org.bson.types.ObjectId
+
+import com.mongodb.BasicDBObject
+import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.commons.TypeImports.ObjectId
+import com.supertaskhelper.MongoFactory
+import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE}
+import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.util.ConverterUtil
+import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 
 /**
@@ -95,8 +88,6 @@ trait TaskService extends Service with ConverterUtil with CityService {
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
         tariffWithoutFeeForSTH, tariffWithFeeForSTH)
-
-      import _root_.scala.collection.JavaConverters._
       val task = Task(
         title = taskResult.getAs[String]("title").getOrElse(""),
         id = taskResult.getAs[ObjectId]("_id"),
@@ -116,7 +107,8 @@ trait TaskService extends Service with ConverterUtil with CityService {
         badges = Option(badg),
         requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
         hireSthId = taskResult.getAs[String]("hireSthId"),
-        taskPrice = Option(taskPrice)
+        taskPrice = Option(taskPrice),
+        doneBy = taskResult.getAs[Boolean]("doneBy")
       )
       Option(task) //return the task object
 
@@ -374,6 +366,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       "category" -> task.categoryId,
       "categoryId" -> task.categoryId,
       "type" -> task.taskType,
+      "doneBy" -> task.doneBy,
       "hireSthId" -> task.hireSthId.getOrElse(""),
       "withHire" -> (if (task.hireSthId.isDefined) true else false),
       "hasPriceSuggested" -> (if (task.taskPrice.isDefined) task.taskPrice.get.hasPriceSuggested.getOrElse(false) else false),

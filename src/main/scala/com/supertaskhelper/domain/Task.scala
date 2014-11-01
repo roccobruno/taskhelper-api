@@ -1,12 +1,12 @@
 package com.supertaskhelper.domain
 
-import spray.json._
+import java.text.SimpleDateFormat
 import java.util.Date
 
-import java.text.SimpleDateFormat
-import org.bson.types.ObjectId
+import com.supertaskhelper.common.enums.{TASK_REQUEST_TYPE, TASK_STATUS}
 import com.supertaskhelper.domain.search.Searchable
-import com.supertaskhelper.common.enums.{ TASK_REQUEST_TYPE, TASK_STATUS }
+import org.bson.types.ObjectId
+import spray.json._
 
 /**
  * Created with IntelliJ IDEA.
@@ -32,7 +32,8 @@ case class Address(address: Option[String], city: Option[String], country: Strin
 
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
     bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
-    categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice]) extends Searchable {
+    categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice],
+                 doneBy:Option[Boolean]) extends Searchable {
 
   require(createdDate != null, "createdDate cannot be null")
   require(!title.isEmpty, "title cannot be empty")
@@ -227,7 +228,7 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   implicit val taskBadgesFormat = jsonFormat7(TaskBadges)
   implicit val taskPriceFormat = jsonFormat8(TaskPrice)
 
-  implicit val taskFormat = jsonFormat19(Task)
+  implicit val taskFormat = jsonFormat20(Task)
 }
 
 case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
@@ -240,6 +241,6 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {
   import com.supertaskhelper.domain.TaskJsonFormat._
-  implicit val taskFormat = jsonFormat19(Task)
+  implicit val taskFormat = jsonFormat20(Task)
   implicit val tasksFormat = jsonFormat1(Tasks)
 }

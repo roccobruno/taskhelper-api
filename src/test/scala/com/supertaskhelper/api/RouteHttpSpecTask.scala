@@ -1,26 +1,20 @@
 package com.supertaskhelper.api
 
-import org.scalatest.{ Matchers, WordSpecLike }
-import spray.testkit.ScalatestRouteTest
-import concurrent.duration._
+import java.util.{Calendar, Date, GregorianCalendar}
 
-import org.scalatest.Matchers._
-import spray.http.StatusCodes
-import com.supertaskhelper.domain._
-import java.util.{Calendar, GregorianCalendar, Date}
-import com.supertaskhelper.domain.TaskJsonFormat._
-
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.Location
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Address
-import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.common.enums.{TASK_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
-import spray.routing.{MalformedQueryParamRejection, ValidationRejection}
+import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.router.RouteHttpService
-import com.supertaskhelper.common.enums.{TASK_TYPE, TASK_STATUS}
+import org.scalatest.{Matchers, WordSpecLike}
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
+import spray.routing.ValidationRejection
+import spray.testkit.ScalatestRouteTest
+
+import scala.concurrent.duration._
 
 /**
  * Created with IntelliJ IDEA.
@@ -43,7 +37,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
 
   val task = Task(None, "Api Task Test", "Api Task test desc", new Date(), Option(address), new Date(),
     "17.00", TASK_STATUS.TOAPPROVEREQUEST.toString, "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
-    Option("52515bb0e4b094388a43ca39"), TASK_TYPE.OFFLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
+    Option("52515bb0e4b094388a43ca39"), TASK_TYPE.OFFLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice),Option(true)
 
   )
 
@@ -158,6 +152,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).bids.get(0).offeredValue == bid.offeredValue)
         assert(responseAs[Tasks].tasks(0).bids.get(0).incrementedValue ==bid.incrementedValue)
         assert(responseAs[Tasks].tasks(0).bids.get(0).createdDate.isDefined)
+        assert(responseAs[Tasks].tasks(0).doneBy == Option(true))
       }
 
       val date = new GregorianCalendar()

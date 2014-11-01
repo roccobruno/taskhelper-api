@@ -1,23 +1,16 @@
 package com.supertaskhelper.api
 
-import org.scalatest.{Matchers, WordSpecLike}
-import spray.testkit.ScalatestRouteTest
-import com.supertaskhelper.router.RouteHttpService
-import akka.actor.ActorRefFactory
-import spray.http.StatusCodes
-import com.supertaskhelper.domain._
-import com.supertaskhelper.domain.TaskJsonFormat._
-
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.TaskJsonFormat._
-import com.supertaskhelper.domain.TasksJsonFormat._
-import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import java.util.Date
-import com.supertaskhelper.common.enums.{TASK_TYPE, TASK_STATUS}
-import com.supertaskhelper.domain.TaskPrice
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.Task
+
+import akka.actor.ActorRefFactory
+import com.supertaskhelper.common.enums.{TASK_STATUS, TASK_TYPE}
+import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.{Response, Task, TaskPrice, _}
+import com.supertaskhelper.router.RouteHttpService
+import org.scalatest.{Matchers, WordSpecLike}
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
+import spray.testkit.ScalatestRouteTest
 
 /**
 * Created with IntelliJ IDEA.
@@ -37,7 +30,7 @@ class HttpTaskSpecTask extends WordSpecLike with ScalatestRouteTest with Matcher
 
     val taskOnline = Task(None, "Api Task Test", "Api Task test desc", new Date(), None, new Date(),
       "17.00", TASK_STATUS.TOAPPROVEREQUEST.toString, "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
-      Option("52515bb0e4b094388a43ca39"), TASK_TYPE.ONLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice)
+      Option("52515bb0e4b094388a43ca39"), TASK_TYPE.ONLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice),Option(true)
 
     )
 
