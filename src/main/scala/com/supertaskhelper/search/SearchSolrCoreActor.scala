@@ -8,23 +8,15 @@ package com.supertaskhelper.search
  * To change this template use File | Settings | File Templates.
  */
 import akka.event.LoggingReceive
-
-import spray.httpx.SprayJsonSupport
-
-import com.supertaskhelper.search.SearchSolrCoreActor.{ SearchSolr, SearchResultsSolrWrapper }
-import spray.http.{ HttpEntity, BasicHttpCredentials, Uri }
+import akka.pattern.pipe
+import com.supertaskhelper.Settings
+import com.supertaskhelper.domain.search.SearchParams
+import com.supertaskhelper.search.SearchSolrCoreActor.SearchResultsSolrWrapper
 import spray.client.pipelining._
 import spray.http.MediaTypes._
-import akka.pattern.pipe
-import spray.can.Http
-
-import akka.event.LoggingReceive
+import spray.http.{BasicHttpCredentials, Uri}
 import spray.httpx.SprayJsonSupport
-import spray.httpx.unmarshalling.Unmarshaller
 import spray.json._
-import com.supertaskhelper.search.SearchSolrCoreActor.SearchResultsSolrWrapper
-import com.supertaskhelper.domain.search.SearchParams
-import com.supertaskhelper.Settings
 
 object SearchSolrCoreActor {
 
@@ -132,7 +124,7 @@ trait SearchSolrCoreActor
 
   private def getPage(page: Option[Int], sizePage: Option[Int]): String = {
     if (page.isDefined)
-      (((page.get - 1) * sizePage.getOrElse(10)) + 1).toString
+      (((page.get - 1) * sizePage.getOrElse(10))).toString
     else {
       0.toString
     }
