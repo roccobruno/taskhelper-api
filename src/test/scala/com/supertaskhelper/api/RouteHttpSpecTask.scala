@@ -9,6 +9,7 @@ import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.router.RouteHttpService
+import com.supertaskhelper.security.UserToken
 import org.scalatest.{Matchers, WordSpecLike}
 import spray.http.StatusCodes
 import spray.httpx.SprayJsonSupport._
@@ -289,6 +290,27 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         status should be(StatusCodes.OK)
         assert(responseAs[Tasks].tasks(0).status == TASK_STATUS.CLOSED.toString)
       }
+
+      val codeGenerated = getCodeFromEmail(email)
+      Get("/api/verifycode?codeEmail="+codeGenerated.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("code verified"))
+      }
+
+      import com.supertaskhelper.security.UserTokensonFormat._
+      var token = ""
+      Get("/api/login?email="+email+"&password="+password) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[UserToken].userName == userReg.userName)
+        assert(responseAs[UserToken].token.isEmpty == false)
+        token =  responseAs[UserToken].token
+      }
+
+      //clean up db
+      Delete("/api/users?id="+userId.get+"&email="+email+"&token="+token) ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+      removeCodeEmail(email)
     }
 
 
