@@ -10,20 +10,19 @@ import com.supertaskhelper.domain.StatusJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-import com.supertaskhelper.domain.{Bid, Comment, ConversationParams, Message, Response, Status, Task, TaskParams, UserRegistration, _}
 import com.supertaskhelper.domain.search.{ActivityParams, SearchParams, UserSearchParams}
+import com.supertaskhelper.domain.{Bid, Comment, ConversationParams, Message, Response, Status, Task, TaskParams, UserRegistration, _}
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.security.UserAuthentication
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.TaskServiceActor.{CreateBid, CreateComment, CreateTask, DeleteTask, FindBids, FindComments, FindTask, FindTaskCategory, _}
 import com.supertaskhelper.service.UserServiceActor.{CreateUser, _}
-import com.supertaskhelper.service.{Code, CreateMessage, _}
 import com.supertaskhelper.service.actors.ActivityActor
+import com.supertaskhelper.service.{Code, CreateMessage, _}
 import spray.http.MediaTypes
 import spray.httpx.SprayJsonSupport._
 import spray.routing.{RequestContext, _}
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -268,7 +267,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
           respondWithMediaType(MediaTypes.`application/json`) {
             entity(as[Feedback]) { feedback =>
               ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! feedback
+              perRequestSearchingActor ! feedback
 
             }
           }
@@ -278,7 +277,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
           respondWithMediaType(MediaTypes.`application/json`) {
             entity(as[UpdateTaskStatusParams]) { params =>
               ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! UpdateTask(params)
+              perRequestSearchingActor ! UpdateTask(params)
 
             }
           }

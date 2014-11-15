@@ -335,9 +335,6 @@ trait TaskService extends Service with ConverterUtil with CityService {
     )
   }
 
-
-
-
   def createTask(task: Task, language: String) = {
     val collection = MongoFactory.getCollection("task")
     val doc = if (task.address.isDefined) buildMongodBObjTaskWithAddress(task, true) else buildMongodBObjTaskWithAddress(task, false)
@@ -353,16 +350,16 @@ trait TaskService extends Service with ConverterUtil with CityService {
 
   }
 
-  def updateTaskStatus(taskId:String, status:String) = {
+  def updateTaskStatus(taskId: String, status: String) = {
     val collection = MongoFactory.getCollection("task")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
-    collection update(q, $set("status" -> status))
+    collection update (q, $set("status" -> status))
   }
 
-  def updateTaskStatusAndRequestType(taskId:String, status:String,requestType:String) = {
+  def updateTaskStatusAndRequestType(taskId: String, status: String, requestType: String) = {
     val collection = MongoFactory.getCollection("task")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
-    collection update(q, $set("status" -> status,"requestType" -> requestType))
+    collection update (q, $set("status" -> status, "requestType" -> requestType))
   }
 
   case class Price(numOfWorkingHour: Int, tariffWithoutFeeForSTH: String, tariffWithFeeForSTH: String)

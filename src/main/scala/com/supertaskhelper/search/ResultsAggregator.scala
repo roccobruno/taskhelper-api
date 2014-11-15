@@ -3,8 +3,8 @@ package com.supertaskhelper.search
 import akka.actor._
 import akka.event.LoggingReceive
 import com.supertaskhelper.Settings
-import com.supertaskhelper.domain.{Task, TaskParams, Tasks, User}
 import com.supertaskhelper.domain.search.Searchable
+import com.supertaskhelper.domain.{Task, TaskParams, Tasks, User}
 import com.supertaskhelper.search.ResultsAggregator.{Enrichable, Enriched, NotEnriched}
 import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
 import com.supertaskhelper.service.TaskServiceActor.FindTask
@@ -63,7 +63,7 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
 
       // Let's fire a request to the PS API for each task
       docs.foreach(doc =>
-        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance,None)) }
+        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance, None)) }
         else { createUS ! FindUser(doc.id, doc.distance) }
         ))
     }

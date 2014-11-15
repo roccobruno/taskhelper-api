@@ -40,13 +40,12 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
   import com.supertaskhelper.domain.TaskJsonFormat._
   def receive = LoggingReceive {
 
-
     case f: Feedback => {
       //TODO add PAYPAL CODE
       //update task status
-      updateTaskStatus(f.taskId,TASK_STATUS.CLOSED.toString)
+      updateTaskStatus(f.taskId, TASK_STATUS.CLOSED.toString)
       val sendAlertActor = createSendAlertActor(context)
-      sendAlertActor ! new ClosedTaskAlert(f.taskId,f.language.getOrElse("it"))
+      sendAlertActor ! new ClosedTaskAlert(f.taskId, f.language.getOrElse("it"))
 
       updateUserWithRatingAndAddFeedback(f)
 
@@ -143,42 +142,41 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       context.stop(self)
     }
 
-    case UpdateTask(params:UpdateTaskStatusParams) => {
+    case UpdateTask(params: UpdateTaskStatusParams) => {
       log.info("Received request to update the  taskid :{}", params.id)
       val sendAlertActor = createSendAlertActor(context)
       //update task status
       val status = params.status
 
-      if(params.status == TASK_STATUS.REQUESTACCEPTED.toString) {
+      if (params.status == TASK_STATUS.REQUESTACCEPTED.toString) {
         //task request. need to send ale(rt only to the choosen STH
-        updateTaskStatus(params.id,params.status)
+        updateTaskStatus(params.id, params.status)
         sendAlertActor ! new AcceptedTaskRequestAlert(params.id, params.language.getOrElse("it"))
       }
-      if(params.status == TASK_STATUS.REQUESTREFUSED.toString) {
+      if (params.status == TASK_STATUS.REQUESTREFUSED.toString) {
         //task request. need to send ale(rt only to the choosen STH
-        updateTaskStatus(params.id,params.status)
+        updateTaskStatus(params.id, params.status)
         sendAlertActor ! new RejectedTaskRequestAlert(params.id, params.language.getOrElse("it"))
       }
-      if(params.status == TASK_STATUS.TOVERIFY.toString) {
+      if (params.status == TASK_STATUS.TOVERIFY.toString) {
         //task request. need to send ale(rt only to the choosen STH
-        val task:Task = findTask(TaskParams(Some(params.id)
-        ,None,None,None,None,None,None,None,None,None))(0).get
+        val task: Task = findTask(TaskParams(Some(params.id), None, None, None, None, None, None, None, None, None))(0).get
         val newRequetType: TASK_REQUEST_TYPE = if (task.requestType.equalsIgnoreCase(TASK_REQUEST_TYPE.WITH_DIRECT_HIRE.toString))
           TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE else TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF
 
-        updateTaskStatusAndRequestType(params.id,params.status,newRequetType.toString)
+        updateTaskStatusAndRequestType(params.id, params.status, newRequetType.toString)
 
         sendAlertActor ! new CreatedTaskAlert(params.id, params.language.getOrElse("it"))
       }
 
-      if(params.status == TASK_STATUS.COMPLETED.toString) {
+      if (params.status == TASK_STATUS.COMPLETED.toString) {
         //task request. need to send ale(rt only to the choosen STH
-        updateTaskStatus(params.id,params.status)
+        updateTaskStatus(params.id, params.status)
         sendAlertActor ! new CompletedTaskAlert(params.id, params.language.getOrElse("it"))
 
       }
 
-      httpRequestContext.complete(Response("Success",params.id))
+      httpRequestContext.complete(Response("Success", params.id))
       context.stop(self)
 
     }

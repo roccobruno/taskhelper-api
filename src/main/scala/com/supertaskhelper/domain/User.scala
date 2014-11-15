@@ -18,7 +18,7 @@ import spray.json._
 case class User(userName: String, lastName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
   distance: Option[String], address: Option[Address], bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
-  webcamVerified: Option[Boolean], accountStatus: Option[String],averageRating: Option[Int],numOfFeedbacks :Option[Int])
+  webcamVerified: Option[Boolean], accountStatus: Option[String], averageRating: Option[Int], numOfFeedbacks: Option[Int])
     extends Searchable
 object UserJsonFormat extends DefaultJsonProtocol {
   implicit val locationFormat = jsonFormat2(Location)
@@ -42,7 +42,7 @@ case class UserRegistration(userName: String, lastname: String, password: String
 
 }
 
-case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String, sthId: Option[String],language:Option[String])
+case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String, sthId: Option[String], language: Option[String])
 case class Feedbacks(feedbacks: Seq[Feedback])
 
 object FeedbackJsonFormat extends DefaultJsonProtocol {

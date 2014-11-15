@@ -35,16 +35,13 @@ class SendingAlertsActor() extends Actor with ActorLogging {
         val rabbitTemplate = RabbitMQConnection.getRabbitTemplate()
         rabbitTemplate.convertAndSend("alerts", alert)
         log.info(s"MESSAGE SENT alert:${alert} ; killing actor ")
-      }
-      catch {
+      } catch {
         case e => {
           log.error(s"MESSAGE SENT alert:${alert} ;error :${e} ")
         }
-      }
-      finally {
+      } finally {
         context.stop(self)
       }
-
 
     }
     case message @ _ =>

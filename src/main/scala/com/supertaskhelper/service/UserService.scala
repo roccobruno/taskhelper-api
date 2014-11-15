@@ -4,7 +4,7 @@ import java.util.{Calendar, Date, GregorianCalendar, Locale}
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.TypeImports.{BasicDBObject, ObjectId}
+import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.domain.Password
 import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, TASK_TYPE}
@@ -23,19 +23,18 @@ import org.bson.types.ObjectId
 
 trait UserService extends Service with ConverterUtil {
 
-
   def buildDBFeedbackObg(feedback: Feedback): MongoDBObject = {
     MongoDBObject(
-    "userId" -> feedback.userId,
-    "created_date" -> feedback.createdDate,
-    "description" -> feedback.description,
-    "rating" -> feedback.rating,
-    "taskId" -> feedback.taskId
+      "userId" -> feedback.userId,
+      "created_date" -> feedback.createdDate,
+      "description" -> feedback.description,
+      "rating" -> feedback.rating,
+      "taskId" -> feedback.taskId
     )
 
   }
 
-  def updateUserWithRatingAndAddFeedback(f:Feedback) = {
+  def updateUserWithRatingAndAddFeedback(f: Feedback) = {
 
     val collection = MongoFactory.getCollection("user")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(f.sthId.get))
@@ -44,8 +43,8 @@ trait UserService extends Service with ConverterUtil {
 
     val numTot: Int = user.numOfFeedbacks.getOrElse(0) + 1
     val newAverage: Int = ((user.averageRating.getOrElse(0) * (numTot - 1)) + f.rating) / numTot
-    collection update(q,$set("averageRating" -> newAverage,"numOfFeedbacks" -> numTot))
-    collection update(q,$push(("feedbacks", buildDBFeedbackObg(f))))
+    collection update (q, $set("averageRating" -> newAverage, "numOfFeedbacks" -> numTot))
+    collection update (q, $push(("feedbacks", buildDBFeedbackObg(f))))
   }
 
   def findUserSkills(userId: String): TaskCategories = {
@@ -182,7 +181,7 @@ trait UserService extends Service with ConverterUtil {
         idDocVerified = userResult.getAs[Boolean]("idDocVerified"),
         accountStatus = userResult.getAs[String]("accountStatus"),
         averageRating = userResult.getAs[Int]("averageRating"),
-        numOfFeedbacks =  userResult.getAs[Int]("numOfFeedbacks")
+        numOfFeedbacks = userResult.getAs[Int]("numOfFeedbacks")
 
       )
       (true, user)
