@@ -5,7 +5,6 @@ import java.util.Date
 import com.mongodb.BasicDBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.mongodb.casbah.commons.TypeImports.ObjectId
 import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE}
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
@@ -336,19 +335,34 @@ trait TaskService extends Service with ConverterUtil with CityService {
     )
   }
 
-  def createTask(task: Task, langauge: String) = {
+
+
+
+  def createTask(task: Task, language: String) = {
     val collection = MongoFactory.getCollection("task")
     val doc = if (task.address.isDefined) buildMongodBObjTaskWithAddress(task, true) else buildMongodBObjTaskWithAddress(task, false)
     collection.save(doc)
 
     if (task.taskType == "OFFLINE" && task.address.isDefined) {
 
-      saveCityFromAddress(task.address.get, langauge)
+      saveCityFromAddress(task.address.get, language)
 
     }
 
     Response("Success", doc.getAs[org.bson.types.ObjectId]("_id").get.toString)
 
+  }
+
+  def updateTaskStatus(taskId:String, status:String) = {
+    val collection = MongoFactory.getCollection("task")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
+    collection update(q, $set("status" -> status))
+  }
+
+  def updateTaskStatusAndRequestType(taskId:String, status:String,requestType:String) = {
+    val collection = MongoFactory.getCollection("task")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
+    collection update(q, $set("status" -> status,"requestType" -> requestType))
   }
 
   case class Price(numOfWorkingHour: Int, tariffWithoutFeeForSTH: String, tariffWithFeeForSTH: String)

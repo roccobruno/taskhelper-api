@@ -1,48 +1,15 @@
 package com.supertaskhelper.search
 
 import akka.actor._
-import java.util.Locale
-import com.supertaskhelper.Settings
-
 import akka.event.LoggingReceive
-import com.supertaskhelper.domain.{ User, Tasks, TaskParams, Task }
-import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
-import com.supertaskhelper.service.TaskServiceActor.FindTask
-import org.bson.types.ObjectId
-import spray.json.DefaultJsonProtocol
+import com.supertaskhelper.Settings
+import com.supertaskhelper.domain.{Task, TaskParams, Tasks, User}
 import com.supertaskhelper.domain.search.Searchable
-import com.supertaskhelper.search.ResultsAggregator.{ Enrichable, NotEnriched, Enriched }
-import com.supertaskhelper.service.actors._
-import com.supertaskhelper.search.ResultsAggregator.NotEnriched
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.domain.User
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Tasks
-import com.supertaskhelper.search.ResultsAggregator.Enriched
+import com.supertaskhelper.search.ResultsAggregator.{Enrichable, Enriched, NotEnriched}
 import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
-import com.supertaskhelper.search.SearchResultList
 import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.search.ResultsAggregator.NotEnriched
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.domain.User
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Tasks
-import com.supertaskhelper.search.ResultsAggregator.Enriched
-import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
-import com.supertaskhelper.search.SearchResultList
-import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.service.actors.TaskNotFound
-import com.supertaskhelper.search.ResultsAggregator.NotEnriched
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.service.actors.UserNotFound
-import com.supertaskhelper.domain.User
-import com.supertaskhelper.service.actors.FindUser
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Tasks
-import com.supertaskhelper.search.ResultsAggregator.Enriched
-import com.supertaskhelper.search.SearchSolrCoreActor.SearchResults
-import com.supertaskhelper.search.SearchResultList
-import com.supertaskhelper.service.TaskServiceActor.FindTask
+import com.supertaskhelper.service.actors.{FindUser, TaskNotFound, UserNotFound, _}
+import org.bson.types.ObjectId
 
 /**
  * Created with IntelliJ IDEA.
@@ -96,7 +63,7 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
 
       // Let's fire a request to the PS API for each task
       docs.foreach(doc =>
-        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance)) }
+        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance,None)) }
         else { createUS ! FindUser(doc.id, doc.distance) }
         ))
     }

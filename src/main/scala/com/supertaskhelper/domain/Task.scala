@@ -30,6 +30,9 @@ case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: Option[String], regione: Option[String])
 
+
+
+
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
     bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
     categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice],
@@ -232,11 +235,23 @@ object TaskJsonFormat extends DefaultJsonProtocol {
 }
 
 case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
-  sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int], distance: Option[String]) extends Pagination(page, sizePage)
+  sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int], distance: Option[String],language: Option[String]) extends Pagination(page, sizePage)
 
 object TaskParamsFormat extends DefaultJsonProtocol {
-  implicit val taskParamsFormat = jsonFormat9(TaskParams)
+  implicit val taskParamsFormat = jsonFormat10(TaskParams)
 }
+
+case class UpdateTaskStatusParams(id: String, status: String,language: Option[String]) {
+
+  require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:" + TASK_STATUS.values())
+}
+
+object UpdateTaskStatusParamsFormat extends DefaultJsonProtocol {
+  implicit val updateTaskStatusParamsFormat = jsonFormat3(UpdateTaskStatusParams)
+}
+
+
+
 
 case class Tasks(tasks: Seq[Task])
 object TasksJsonFormat extends DefaultJsonProtocol {

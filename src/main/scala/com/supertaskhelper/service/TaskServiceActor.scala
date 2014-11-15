@@ -1,66 +1,24 @@
 package com.supertaskhelper.service
 
-import akka.actor._
-import com.supertaskhelper.util.ActorFactory
-import akka.event.LoggingReceive
-import com.supertaskhelper.service.TaskServiceActor._
-import com.supertaskhelper.domain._
-import scala.concurrent.duration._
-import spray.routing.RequestContext
-import com.supertaskhelper.domain.TaskJsonFormat._
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import spray.routing.RequestContext
-import com.supertaskhelper.amqp.SendingAlertsActor
-import com.supertaskhelper.common.jms.alerts._
-import spray.http.StatusCodes
-import com.supertaskhelper.domain.TasksJsonFormat._
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import spray.routing.RequestContext
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.service.TaskServiceActor.CreateBid
-import spray.routing.RequestContext
-import com.supertaskhelper.service.TaskServiceActor.FindBids
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Tasks
-import com.supertaskhelper.service.TaskServiceActor.FindTask
-import com.supertaskhelper.domain.BidJsonFormat._
-import com.supertaskhelper.domain.BidsJsonFormat._
-import com.supertaskhelper.domain.CommentJsonFormat._
-import com.supertaskhelper.domain.CommentAnswerJsonFormat._
-import com.supertaskhelper.domain.CommentsJsonFormat._
-import com.supertaskhelper.domain.TaskBadgesJsonFormat._
-import com.supertaskhelper.domain.TaskPriceJsonFormat._
-import com.supertaskhelper.domain.TaskCategoryJsonFormat._
-import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
 import java.util.Date
-import com.supertaskhelper.service.actors.{ TaskActor, TaskNotFound }
-import com.supertaskhelper.domain.Bids
-import com.supertaskhelper.service.actors.TaskNotFound
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.service.TaskServiceActor.CreateBid
+
+import akka.actor._
+import akka.event.LoggingReceive
+import com.supertaskhelper.common.enums.{TASK_REQUEST_TYPE, TASK_STATUS}
+import com.supertaskhelper.common.jms.alerts._
+import com.supertaskhelper.domain.BidsJsonFormat._
+import com.supertaskhelper.domain.CommentsJsonFormat._
+import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
+import com.supertaskhelper.domain.TasksJsonFormat._
+import com.supertaskhelper.domain.{Bid, Bids, Comment, CommentAnswer, Comments, Response, Task, TaskParams, Tasks, _}
+import com.supertaskhelper.service.TaskServiceActor.{CreateBid, CreateComment, CreateCommentAnswer, CreateTask, DeleteCommentAnswers, DeleteTask, FindBids, FindCommentAnswers, FindComments, FindTask, FindTaskCategory, _}
+import com.supertaskhelper.service.actors.{TaskActor, TaskNotFound}
+import com.supertaskhelper.util.ActorFactory
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
 import spray.routing.RequestContext
-import com.supertaskhelper.service.TaskServiceActor.FindBids
-import com.supertaskhelper.service.TaskServiceActor.FindTaskCategory
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.service.TaskServiceActor.FindComments
-import com.supertaskhelper.domain.Bid
-import com.supertaskhelper.domain.Comment
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.service.TaskServiceActor.CreateComment
-import com.supertaskhelper.domain.CommentAnswer
-import com.supertaskhelper.service.TaskServiceActor.FindCommentAnswers
-import com.supertaskhelper.service.TaskServiceActor.DeleteCommentAnswers
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Comments
-import com.supertaskhelper.domain.Tasks
-import com.supertaskhelper.service.TaskServiceActor.CreateCommentAnswer
-import com.supertaskhelper.service.TaskServiceActor.FindTask
+
+import scala.concurrent.duration._
 
 /**
  * Created with IntelliJ IDEA.
@@ -70,7 +28,7 @@ import com.supertaskhelper.service.TaskServiceActor.FindTask
  * To change this template use File | Settings | File Templates.
  */
 class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging
-    with TaskService with AlertMessageService {
+    with TaskService with UserService with AlertMessageService {
 
   def createTaskActor(): ActorRef = {
     context.actorOf(Props(classOf[TaskActor]))
@@ -78,9 +36,23 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
   val timeout = Duration(context.system.settings.config.getMilliseconds("api-sth.per-request-actor.timeout"), MILLISECONDS)
   context.setReceiveTimeout(timeout)
-  import com.supertaskhelper.domain.TaskJsonFormat._
   import com.supertaskhelper.domain.ResponseJsonFormat._
+  import com.supertaskhelper.domain.TaskJsonFormat._
   def receive = LoggingReceive {
+
+
+    case f: Feedback => {
+      //TODO add PAYPAL CODE
+      //update task status
+      updateTaskStatus(f.taskId,TASK_STATUS.CLOSED.toString)
+      val sendAlertActor = createSendAlertActor(context)
+      sendAlertActor ! new ClosedTaskAlert(f.taskId,f.language.getOrElse("it"))
+
+      updateUserWithRatingAndAddFeedback(f)
+
+      httpRequestContext.complete(Response("Success", f.taskId))
+      context.stop(self)
+    }
 
     case t: Task => {
       httpRequestContext.complete(t)
@@ -170,6 +142,47 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       httpRequestContext.complete(response)
       context.stop(self)
     }
+
+    case UpdateTask(params:UpdateTaskStatusParams) => {
+      log.info("Received request to update the  taskid :{}", params.id)
+      val sendAlertActor = createSendAlertActor(context)
+      //update task status
+      val status = params.status
+
+      if(params.status == TASK_STATUS.REQUESTACCEPTED.toString) {
+        //task request. need to send ale(rt only to the choosen STH
+        updateTaskStatus(params.id,params.status)
+        sendAlertActor ! new AcceptedTaskRequestAlert(params.id, params.language.getOrElse("it"))
+      }
+      if(params.status == TASK_STATUS.REQUESTREFUSED.toString) {
+        //task request. need to send ale(rt only to the choosen STH
+        updateTaskStatus(params.id,params.status)
+        sendAlertActor ! new RejectedTaskRequestAlert(params.id, params.language.getOrElse("it"))
+      }
+      if(params.status == TASK_STATUS.TOVERIFY.toString) {
+        //task request. need to send ale(rt only to the choosen STH
+        val task:Task = findTask(TaskParams(Some(params.id)
+        ,None,None,None,None,None,None,None,None,None))(0).get
+        val newRequetType: TASK_REQUEST_TYPE = if (task.requestType.equalsIgnoreCase(TASK_REQUEST_TYPE.WITH_DIRECT_HIRE.toString))
+          TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE else TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF
+
+        updateTaskStatusAndRequestType(params.id,params.status,newRequetType.toString)
+
+        sendAlertActor ! new CreatedTaskAlert(params.id, params.language.getOrElse("it"))
+      }
+
+      if(params.status == TASK_STATUS.COMPLETED.toString) {
+        //task request. need to send ale(rt only to the choosen STH
+        updateTaskStatus(params.id,params.status)
+        sendAlertActor ! new CompletedTaskAlert(params.id, params.language.getOrElse("it"))
+
+      }
+
+      httpRequestContext.complete(Response("Success",params.id))
+      context.stop(self)
+
+    }
+
     case CreateBid(bid: Bid, language: String) => {
       log.info("Received request to create the  bid :{}", bid)
 
@@ -242,6 +255,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 object TaskServiceActor {
 
   case class FindTask(params: TaskParams)
+  case class UpdateTask(params: UpdateTaskStatusParams)
   case class DeleteTask(id: String)
   case class CreateTask(task: Task, language: String)
   case class FindBids(taskId: String)

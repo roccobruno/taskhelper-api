@@ -1,58 +1,30 @@
 package com.supertaskhelper.router
 
 import akka.actor._
-import spray.util.{ LoggingContext, SprayActorLogging }
-import spray.routing._
-
-import spray.http.{ StatusCodes, MediaTypes }
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain._
 import akka.event.LoggingReceive
-
-import com.supertaskhelper.domain.StatusJsonFormat._
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
-
-import com.supertaskhelper.security.UserTokensonFormat._
-import com.supertaskhelper.domain.TaskJsonFormat._
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import com.supertaskhelper.service._
-import com.supertaskhelper.service.TaskServiceActor._
-import com.supertaskhelper.search.SearchActor
-import com.supertaskhelper.domain.search._
-import com.supertaskhelper.security.{ Logout, LoginActor, UserLogin, UserAuthentication }
-import com.supertaskhelper.service.UserServiceActor._
-import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-import com.supertaskhelper.domain.MessageJsonFormat._
-import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
-
+import com.supertaskhelper.domain.FeedbackJsonFormat._
+import com.supertaskhelper.domain.MessageJsonFormat._
+import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.StatusJsonFormat._
+import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
+import com.supertaskhelper.domain.UserRegistrationJsonFormat._
+import com.supertaskhelper.domain.{Bid, Comment, ConversationParams, Message, Response, Status, Task, TaskParams, UserRegistration, _}
+import com.supertaskhelper.domain.search.{ActivityParams, SearchParams, UserSearchParams}
+import com.supertaskhelper.search.SearchActor
+import com.supertaskhelper.security.UserAuthentication
+import com.supertaskhelper.security.UserTokensonFormat._
+import com.supertaskhelper.service.TaskServiceActor.{CreateBid, CreateComment, CreateTask, DeleteTask, FindBids, FindComments, FindTask, FindTaskCategory, _}
+import com.supertaskhelper.service.UserServiceActor.{CreateUser, _}
+import com.supertaskhelper.service.{Code, CreateMessage, _}
 import com.supertaskhelper.service.actors.ActivityActor
+import spray.http.MediaTypes
+import spray.httpx.SprayJsonSupport._
+import spray.routing.{RequestContext, _}
 
-import com.supertaskhelper.domain.ConversationParams
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.search.UserSearchParams
-import com.supertaskhelper.service.TaskServiceActor.CreateBid
-import spray.routing.RequestContext
-import com.supertaskhelper.domain.Message
-import com.supertaskhelper.service.TaskServiceActor.FindBids
-import com.supertaskhelper.service.CreateMessage
-import com.supertaskhelper.service.TaskServiceActor.FindTaskCategory
-import com.supertaskhelper.domain.TaskParams
-import com.supertaskhelper.domain.search.SearchParams
-import com.supertaskhelper.service.TaskServiceActor.FindComments
-import com.supertaskhelper.domain.Bid
-import com.supertaskhelper.service.Code
-import com.supertaskhelper.domain.Comment
-import com.supertaskhelper.service.UserServiceActor.CreateUser
-import com.supertaskhelper.service.TaskServiceActor.DeleteTask
-import com.supertaskhelper.service.TaskServiceActor.CreateComment
-import com.supertaskhelper.service.TaskServiceActor.CreateTask
-import com.supertaskhelper.domain.search.ActivityParams
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.Status
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.service.TaskServiceActor.FindTask
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created with IntelliJ IDEA.
@@ -291,6 +263,26 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
             }
           }
+      } ~ path("tasks" / "close") {
+        post {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            entity(as[Feedback]) { feedback =>
+              ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! feedback
+
+            }
+          }
+        }
+      } ~ path("tasks" / "update") {
+        post {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            entity(as[UpdateTaskStatusParams]) { params =>
+              ctx => val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! UpdateTask(params)
+
+            }
+          }
+        }
       } ~ path("tasks") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
@@ -303,7 +295,8 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               'city.as[String].?,
               'page.as[Int].?,
               'sizePage.as[Int].?,
-              'distance.as[String].?).as(TaskParams) { params =>
+              'distance.as[String].?,
+              'language.as[String].?).as(TaskParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! FindTask(params)

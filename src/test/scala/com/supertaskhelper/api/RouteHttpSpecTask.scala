@@ -1,11 +1,12 @@
 package com.supertaskhelper.api
 
-import java.util.{Calendar, Date, GregorianCalendar}
+import java.util.{Calendar, Date, GregorianCalendar, Locale}
 
-import com.supertaskhelper.common.enums.{TASK_STATUS, TASK_TYPE}
+import com.supertaskhelper.common.enums.{SOURCE, TASK_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
+import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.router.RouteHttpService
 import org.scalatest.{Matchers, WordSpecLike}
@@ -35,9 +36,26 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
   val taskPrice = TaskPrice(Option(true),Option("10"),Option(true),Option(2),Option(true),Option(3),Option("2"),Option("3"))
   val taskBadge = TaskBadges(Option(true), Option(true), Option(true), Option(true), Option(true), Option(true), Option(true))
 
-  val task = Task(None, "Api Task Test", "Api Task test desc", new Date(), Option(address), new Date(),
-    "17.00", TASK_STATUS.TOAPPROVEREQUEST.toString, "53028f49036462126f7f042b", None, None, None, Option("Tuttofare"),
-    Option("52515bb0e4b094388a43ca39"), TASK_TYPE.OFFLINE.toString,Option(taskBadge),"WITH_AUCTION_ONLY",Option("52515bb0e4b094388a43ca39"),Option(taskPrice),Option(true)
+  val task = Task(None,
+    "Api Task Test",
+    "Api Task test desc",
+    new Date(),
+    Option(address),
+    new Date(),
+    "17.00",
+    TASK_STATUS.TOAPPROVEREQUEST.toString,
+    "53028f49036462126f7f042b",
+    None,
+    None,
+    None,
+    Option("Tuttofare"),
+    Option("52515bb0e4b094388a43ca39"),
+    TASK_TYPE.OFFLINE.toString,
+    Option(taskBadge),
+    "WITH_AUCTION_ONLY",
+    Option("52515bb0e4b094388a43ca39"),
+    Option(taskPrice),
+    Option(true)
 
   )
 
@@ -61,6 +79,17 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Response].message.contains("Success"))
         taskId = Option(responseAs[Response].id)
         println(taskId)
+      }
+
+
+      val updateTaskStatus = UpdateTaskStatusParams(taskId.get,TASK_STATUS.REQUESTACCEPTED.toString,Some("it"))
+
+      Post("/api/tasks/update",updateTaskStatus) ~> route ~> check {
+
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Success"))
+
+
       }
 
 
@@ -116,7 +145,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).address.get.location.get.longitude == task.address.get.location.get.longitude)
         assert(responseAs[Tasks].tasks(0).category == task.categoryId)
         assert(responseAs[Tasks].tasks(0).categoryId == task.categoryId)
-        assert(responseAs[Tasks].tasks(0).status == task.status)
+        assert(responseAs[Tasks].tasks(0).status == TASK_STATUS.REQUESTACCEPTED.toString)
         assert(responseAs[Tasks].tasks(0).badges.get.passportIdBudgetRequired == task.badges.get.passportIdBudgetRequired)
         assert(responseAs[Tasks].tasks(0).badges.get.webcamBudgetRequired == task.badges.get.webcamBudgetRequired)
         assert(responseAs[Tasks].tasks(0).badges.get.secDocBudgetRequired == task.badges.get.secDocBudgetRequired)
@@ -226,7 +255,45 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Bids].bids(0).createdDate.get.before(new Date()))
       }
 
+      val email:String = "test_rocco_reg@msn.com"
+      val password:String = "test_rocco"
+      val username = "test_rocco"
+      val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
+      var userId: Option[String] = None
+      import com.supertaskhelper.domain.UserRegistrationJsonFormat._
+      Post("/api/users",userReg) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Resource Added"))
+        userId = Option(responseAs[Response].id)
+      }
+
+      val feedback = Feedback("5383766d036457876c3dc24f","feedback test",new Date(),5,taskId.get,
+        userId,Some("it"))
+      //test close task
+      import com.supertaskhelper.domain.FeedbackJsonFormat._
+      Post("/api/tasks/close",feedback) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Success"))
+      }
+      import com.supertaskhelper.domain.FeedbacksJsonFormat._
+      Get("/api/users/feedbacks?userId="+userId.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Feedbacks].feedbacks.size == 1)
+        assert(responseAs[Feedbacks].feedbacks(0).rating ==5)
+        assert(responseAs[Feedbacks].feedbacks(0).description =="feedback test")
+
+      }
+
+      import com.supertaskhelper.domain.TasksJsonFormat._
+      Get("/api/tasks?id=" + taskId.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Tasks].tasks(0).status == TASK_STATUS.CLOSED.toString)
+      }
     }
+
+
+
+
 
     "accept request to delte a task" in {
       Delete("/api/tasks?id=" + taskId.get) ~> route ~> check {

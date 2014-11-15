@@ -1,11 +1,9 @@
 package com.supertaskhelper.service.actors
 
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.{Actor, ActorLogging}
 import akka.event.LoggingReceive
 import com.supertaskhelper.domain.User
-import com.mongodb.casbah.Imports._
-import com.supertaskhelper.service.{ UserService }
-import com.supertaskhelper.domain.User
+import com.supertaskhelper.service.UserService
 
 /**
  * Created with IntelliJ IDEA.
@@ -50,7 +48,9 @@ class UserActor extends Actor with ActorLogging with UserService {
       webcamVerified = u.webcamVerified,
       emailVerified = u.emailVerified,
       idDocVerified = u.idDocVerified,
-      accountStatus = u.accountStatus
+      accountStatus = u.accountStatus,
+      averageRating = u.numOfFeedbacks,
+      numOfFeedbacks = u.numOfFeedbacks
 
     )
 

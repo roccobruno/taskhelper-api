@@ -1,15 +1,11 @@
 package com.supertaskhelper.domain
 
-import spray.json._
-import java.util.{ Date, Locale }
 import java.text.SimpleDateFormat
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.User
+import java.util.{Date, Locale}
+
 import com.supertaskhelper.common.enums.SOURCE
 import com.supertaskhelper.domain.search.Searchable
 import spray.json._
-import DefaultJsonProtocol._
-import com.supertaskhelper.service.UserUtil
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,12 +18,12 @@ import com.supertaskhelper.service.UserUtil
 case class User(userName: String, lastName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
   distance: Option[String], address: Option[Address], bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
-  webcamVerified: Option[Boolean], accountStatus: Option[String])
+  webcamVerified: Option[Boolean], accountStatus: Option[String],averageRating: Option[Int],numOfFeedbacks :Option[Int])
     extends Searchable
 object UserJsonFormat extends DefaultJsonProtocol {
   implicit val locationFormat = jsonFormat2(Location)
   implicit val addressFormat = jsonFormat6(Address)
-  implicit val userFormat = jsonFormat18(User)
+  implicit val userFormat = jsonFormat20(User)
 }
 
 case class UserRegistration(userName: String, lastname: String, password: String, confirmPassword: String, email: String,
@@ -46,7 +42,7 @@ case class UserRegistration(userName: String, lastname: String, password: String
 
 }
 
-case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String)
+case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String, sthId: Option[String],language:Option[String])
 case class Feedbacks(feedbacks: Seq[Feedback])
 
 object FeedbackJsonFormat extends DefaultJsonProtocol {
@@ -65,7 +61,7 @@ object FeedbackJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val feedbackFormat = jsonFormat5(Feedback)
+  implicit val feedbackFormat = jsonFormat7(Feedback)
 }
 
 object FeedbacksJsonFormat extends DefaultJsonProtocol {
@@ -84,7 +80,7 @@ object FeedbacksJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val feedbackFormat = jsonFormat5(Feedback)
+  implicit val feedbackFormat = jsonFormat7(Feedback)
   implicit val feedbacksFormat = jsonFormat1(Feedbacks)
 }
 

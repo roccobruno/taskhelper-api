@@ -1,10 +1,7 @@
 package com.supertaskhelper.amqp
 
-import akka.actor.{ ActorLogging, Actor }
-import com.rabbitmq.client.Channel
-import scala.util.parsing.json.JSON
-import spray.routing.RequestContext
-import com.supertaskhelper.common.jms.alerts.{ IAlert, CreatedTaskAlert }
+import akka.actor.{Actor, ActorLogging}
+import com.supertaskhelper.common.jms.alerts.IAlert
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,11 +31,21 @@ class SendingAlertsActor() extends Actor with ActorLogging {
 
     case alert: IAlert => {
 
-      val rabbitTemplate = RabbitMQConnection.getRabbitTemplate()
+      try {
+        val rabbitTemplate = RabbitMQConnection.getRabbitTemplate()
+        rabbitTemplate.convertAndSend("alerts", alert)
+        log.info(s"MESSAGE SENT alert:${alert} ; killing actor ")
+      }
+      catch {
+        case e => {
+          log.error(s"MESSAGE SENT alert:${alert} ;error :${e} ")
+        }
+      }
+      finally {
+        context.stop(self)
+      }
 
-      rabbitTemplate.convertAndSend("alerts", alert)
-      log.info(s"MESSAGE SENT alert:${alert} ; killing actor ")
-      context.stop(self)
+
     }
     case message @ _ =>
       log.warning(s"Unknown message received by SendingAlertsActor: ${message}")

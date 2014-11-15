@@ -1,29 +1,17 @@
 package com.supertaskhelper.service
 
-import com.supertaskhelper.{ Settings, MongoFactory }
-import com.supertaskhelper.domain._
-import com.mongodb.casbah.Imports._
-import java.util.{ Locale, GregorianCalendar, Calendar, Date }
-import akka.actor.{ ActorSystem, Actor, ActorLogging }
-import akka.event.LoggingReceive
-import com.mongodb.casbah.commons.conversions.MongoConversionHelper
-import com.mongodb.casbah.commons.MongoDBObject
+import java.util.{Calendar, Date, GregorianCalendar, Locale}
 
-import com.supertaskhelper.common.domain.{ Password }
+import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import com.supertaskhelper.common.enums.{ TASK_TYPE, ACCOUNT_STATUS }
-import java.util
-import com.typesafe.config.ConfigFactory
-import com.mongodb.BasicDBObject
-import com.mongodb.casbah.commons.TypeImports.BasicDBObject
-import org.bson.types.ObjectId
-import com.mongodb.casbah.commons.TypeImports.ObjectId
+import com.mongodb.casbah.commons.TypeImports.{BasicDBObject, ObjectId}
+import com.supertaskhelper.MongoFactory
+import com.supertaskhelper.common.domain.Password
+import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, TASK_TYPE}
+import com.supertaskhelper.domain.{Address, Location, User, UserRegistration, _}
 import com.supertaskhelper.util.ConverterUtil
-import com.supertaskhelper.domain.Location
-import com.supertaskhelper.service.UserToken
-import com.supertaskhelper.domain.User
-import com.supertaskhelper.domain.UserRegistration
-import com.supertaskhelper.domain.Address
+import com.typesafe.config.ConfigFactory
+import org.bson.types.ObjectId
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,6 +22,31 @@ import com.supertaskhelper.domain.Address
  */
 
 trait UserService extends Service with ConverterUtil {
+
+
+  def buildDBFeedbackObg(feedback: Feedback): MongoDBObject = {
+    MongoDBObject(
+    "userId" -> feedback.userId,
+    "created_date" -> feedback.createdDate,
+    "description" -> feedback.description,
+    "rating" -> feedback.rating,
+    "taskId" -> feedback.taskId
+    )
+
+  }
+
+  def updateUserWithRatingAndAddFeedback(f:Feedback) = {
+
+    val collection = MongoFactory.getCollection("user")
+    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(f.sthId.get))
+
+    val user = findUserById(f.userId)._2
+
+    val numTot: Int = user.numOfFeedbacks.getOrElse(0) + 1
+    val newAverage: Int = ((user.averageRating.getOrElse(0) * (numTot - 1)) + f.rating) / numTot
+    collection update(q,$set("averageRating" -> newAverage,"numOfFeedbacks" -> numTot))
+    collection update(q,$push(("feedbacks", buildDBFeedbackObg(f))))
+  }
 
   def findUserSkills(userId: String): TaskCategories = {
     val collection = MongoFactory.getCollection("user")
@@ -88,7 +101,9 @@ trait UserService extends Service with ConverterUtil {
       description = feedback.getAs[String]("description").getOrElse(""),
       createdDate = feedback.getAs[Date]("created_date").getOrElse(new Date()),
       taskId = feedback.getAs[String]("taskId").getOrElse(""),
-      rating = feedback.getAs[Int]("rating").getOrElse(1)
+      rating = feedback.getAs[Int]("rating").getOrElse(1),
+      sthId = Some(""),
+      language = Some("")
 
     )
   }
@@ -165,7 +180,9 @@ trait UserService extends Service with ConverterUtil {
         webcamVerified = userResult.getAs[Boolean]("webcamVerified"),
         emailVerified = userResult.getAs[Boolean]("emailVerified"),
         idDocVerified = userResult.getAs[Boolean]("idDocVerified"),
-        accountStatus = userResult.getAs[String]("accountStatus")
+        accountStatus = userResult.getAs[String]("accountStatus"),
+        averageRating = userResult.getAs[Int]("averageRating"),
+        numOfFeedbacks =  userResult.getAs[Int]("numOfFeedbacks")
 
       )
       (true, user)
