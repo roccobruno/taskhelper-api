@@ -14,6 +14,8 @@ resolvers += "twitter-repo" at "http://maven.twttr.com"
 
 resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
+resolvers += "Local Jenkins Repository" at "file://var/lib/jenkins/.m2/repository"
+
 val akka = "2.2.3"
 val spray = "1.2.0"
 

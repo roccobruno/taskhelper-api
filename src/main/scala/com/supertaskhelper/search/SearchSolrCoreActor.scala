@@ -114,7 +114,7 @@ trait SearchSolrCoreActor
         "sort" -> s.sort.getOrElse("score desc"),
         "q.op" -> "AND",
         "wt" -> "json",
-        "start" -> s.page.getOrElse(0).toString,
+        "start" -> getPage(s.page, s.sizePage),
         "rows" -> s.sizePage.getOrElse(10).toString,
         "defType" -> "edismax"
 
