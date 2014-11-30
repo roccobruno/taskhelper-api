@@ -12,7 +12,7 @@ resolvers += "spray repo" at "http://repo.spray.io"
 
 resolvers += "twitter-repo" at "http://maven.twttr.com"
 
-resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+//resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 resolvers += "Local Jenkins Repository" at "file://var/lib/jenkins/.m2/repository"
 
