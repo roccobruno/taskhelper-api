@@ -15,8 +15,18 @@ import spray.json._
  * To change this template use File | Settings | File Templates.
  */
 
-case class User(userName: String, lastName: String, isSTH: Boolean, email: String, password: String, id: String, imgUrl: Option[String],
-  distance: Option[String], address: Option[Address], bio: Option[String], fbBudget: Option[Boolean], twitterBudget: Option[Boolean],
+case class User(userName: String,
+  lastName: String,
+  isSTH: Boolean,
+  email: String,
+  password: String,
+  id: String,
+  imgUrl: Option[String],
+  distance: Option[String],
+  address: Option[Address],
+  bio: Option[String],
+  fbBudget: Option[Boolean],
+  twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
   webcamVerified: Option[Boolean], accountStatus: Option[String], averageRating: Option[Int], numOfFeedbacks: Option[Int])
     extends Searchable

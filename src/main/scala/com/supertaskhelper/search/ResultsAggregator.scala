@@ -63,7 +63,7 @@ class ResultsAggregator(replyTo: ActorRef, taskActorFinder: ActorRef, userTaskFi
 
       // Let's fire a request to the PS API for each task
       docs.foreach(doc =>
-        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance, None)) }
+        (if (doc.otype.getOrElse("TASK") == "TASK") { createTA ! FindTask(TaskParams(Option(doc.id), None, None, None, None, None, None, None, doc.distance, None, None, None)) }
         else { createUS ! FindUser(doc.id, doc.distance) }
         ))
     }

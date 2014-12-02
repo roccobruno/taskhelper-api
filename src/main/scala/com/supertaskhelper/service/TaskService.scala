@@ -52,6 +52,12 @@ trait TaskService extends Service with ConverterUtil with CityService {
     if (params.sthId.isDefined)
       builder += "taskHelperId" -> params.sthId.get
 
+    if (params.hireSthId.isDefined)
+      builder += "hireSthId" -> params.hireSthId.get
+
+    if (params.bidSthId.isDefined)
+      builder += "bids.taskhelperId" -> params.bidSthId.get
+
     builder.result
   }
 

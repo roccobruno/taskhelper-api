@@ -231,11 +231,21 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   implicit val taskFormat = jsonFormat20(Task)
 }
 
-case class TaskParams(id: Option[String], status: Option[String], tpId: Option[String], sthId: Option[String],
-  sort: Option[String], city: Option[String], page: Option[Int], sizePage: Option[Int], distance: Option[String], language: Option[String]) extends Pagination(page, sizePage)
+case class TaskParams(id: Option[String],
+  status: Option[String],
+  tpId: Option[String],
+  sthId: Option[String],
+  sort: Option[String],
+  city: Option[String],
+  page: Option[Int],
+  sizePage: Option[Int],
+  distance: Option[String],
+  language: Option[String],
+  bidSthId: Option[String],
+  hireSthId: Option[String]) extends Pagination(page, sizePage)
 
 object TaskParamsFormat extends DefaultJsonProtocol {
-  implicit val taskParamsFormat = jsonFormat10(TaskParams)
+  implicit val taskParamsFormat = jsonFormat12(TaskParams)
 }
 
 case class UpdateTaskStatusParams(id: String, status: String, language: Option[String]) {

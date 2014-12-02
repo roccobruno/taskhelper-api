@@ -160,7 +160,7 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
       }
       if (params.status == TASK_STATUS.TOVERIFY.toString) {
         //task request. need to send ale(rt only to the choosen STH
-        val task: Task = findTask(TaskParams(Some(params.id), None, None, None, None, None, None, None, None, None))(0).get
+        val task: Task = findTask(TaskParams(Some(params.id), None, None, None, None, None, None, None, None, None, None, None))(0).get
         val newRequetType: TASK_REQUEST_TYPE = if (task.requestType.equalsIgnoreCase(TASK_REQUEST_TYPE.WITH_DIRECT_HIRE.toString))
           TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE else TASK_REQUEST_TYPE.WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF
 

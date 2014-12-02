@@ -1,29 +1,26 @@
 package com.supertaskhelper.api
 
-import org.scalatest.{ Matchers, WordSpecLike }
-import spray.testkit.ScalatestRouteTest
-import concurrent.duration._
-import com.supertaskhelper.router.RouteHttpService
-import spray.http.StatusCodes
-import com.supertaskhelper.domain._
-import java.util.{Locale, Date}
+import java.util.{Date, Locale}
 
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.Response
-import com.supertaskhelper.domain.Location
-import com.supertaskhelper.domain.Task
-import com.supertaskhelper.domain.Address
-import spray.routing.{AuthenticationFailedRejection, MalformedQueryParamRejection, ValidationRejection}
-import com.supertaskhelper.common.enums.{TASK_TYPE, ACCOUNT_STATUS, ACTIVITY_TYPE, SOURCE}
-import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import com.supertaskhelper.domain.UserJsonFormat._
+import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, SOURCE, TASK_TYPE}
+import com.supertaskhelper.domain.AccountJsonFormat._
 import com.supertaskhelper.domain.FeedbacksJsonFormat._
+import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
-
+import com.supertaskhelper.domain.UserJsonFormat._
+import com.supertaskhelper.domain.UserRegistrationJsonFormat._
+import com.supertaskhelper.domain.{Address, Location, Response, _}
+import com.supertaskhelper.router.RouteHttpService
 import com.supertaskhelper.security.UserToken
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.UserService
+import org.scalatest.{Matchers, WordSpecLike}
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
+import spray.routing.AuthenticationFailedRejection
+import spray.testkit.ScalatestRouteTest
+
+import scala.concurrent.duration._
 
 /**
  * Created with IntelliJ IDEA.
@@ -32,7 +29,7 @@ import com.supertaskhelper.service.UserService
  * Time: 16:40
  * To change this template use File | Settings | File Templates.
  */
-class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService {
+class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Matchers with RouteHttpService  {
 
   implicit val routeTestTimeout = RouteTestTimeout(15 seconds)
 
@@ -57,13 +54,32 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
     }
 
 
-    val userReg = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
+    val userEmail: String = "test_rocco@msn.com"
+    val userReg = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco",userEmail,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
 
     "accept user registration " in new RouteHttpSpecUsers {
       Post("/api/users",userReg) ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)
+      }
+
+      val acc = Account(userId.get,userEmail,Some("099887756"),true,true,true,"130780",None,false,Some("paypal@email.com"))
+
+      Post("/api/users/account",acc) ~> route ~> check {
+        status should be(StatusCodes.OK)
+      }
+
+      Get("/api/users/account/"+userId.get) ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Account].userId == userId.get)
+        assert(responseAs[Account].email == userEmail)
+        assert(responseAs[Account].mobile.getOrElse("0") == "099887756")
+        assert(responseAs[Account].sms == true)
+        assert(responseAs[Account].okForEmailsAboutBids == true)
+        assert(responseAs[Account].okForEmailsAboutComments == true)
+        assert(responseAs[Account].hasFacebookConnection == false)
+        assert(responseAs[Account].paypalEmail == Some("paypal@email.com"))
       }
 
       Post("/api/users",userReg) ~> route ~> check {
@@ -75,7 +91,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
      Get("/api/users?id="+userId.get) ~> route ~> check {
        status should be(StatusCodes.OK)
        assert(responseAs[User].id == userId.get)
-       assert(responseAs[User].email == "test_rocco@msn.com")
+       assert(responseAs[User].email == userEmail)
        assert(responseAs[User].userName == "test_rocco")
        assert(responseAs[User].lastName == "test_lastname")
        assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
@@ -102,7 +118,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         Get("/api/users?email=test_rocco@msn.com") ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[User].id == userId.get)
-        assert(responseAs[User].email == "test_rocco@msn.com")
+        assert(responseAs[User].email == userEmail)
         assert(responseAs[User].userName == "test_rocco")
           assert(responseAs[User].lastName == "test_lastname")
         assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
@@ -132,7 +148,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         status should be(StatusCodes.OK)
       }
 
-      val userReg2 = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco","test_rocco@msn.com",Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
+      val userReg2 = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco",userEmail,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
 
       Post("/api/users",userReg2) ~> route ~> check {
         status should be(StatusCodes.OK)
@@ -143,7 +159,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       Get("/api/users?id="+userId.get) ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[User].id == userId.get)
-        assert(responseAs[User].email == "test_rocco@msn.com")
+        assert(responseAs[User].email == userEmail)
         assert(responseAs[User].userName == "test_rocco")
         assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)
         assert(responseAs[User].imgUrl.get == "loadphoto/USER_"+userId.get)

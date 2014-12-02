@@ -2,23 +2,29 @@ package com.supertaskhelper.router
 
 import akka.actor._
 import akka.event.LoggingReceive
+import com.supertaskhelper.domain.AccountJsonFormat._
 import com.supertaskhelper.domain.CommentAnswerJsonFormat._
 import com.supertaskhelper.domain.FeedbackJsonFormat._
 import com.supertaskhelper.domain.MessageJsonFormat._
+import com.supertaskhelper.domain.PaymentJsonFormat._
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain.StatusJsonFormat._
 import com.supertaskhelper.domain.TaskJsonFormat._
 import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
 import com.supertaskhelper.domain.UserRegistrationJsonFormat._
 import com.supertaskhelper.domain.search.{ActivityParams, SearchParams, UserSearchParams}
-import com.supertaskhelper.domain.{Bid, Comment, ConversationParams, Message, Response, Status, Task, TaskParams, UserRegistration, _}
+import com.supertaskhelper.domain.{Bid, Comment, ConversationParams, Message, Payment, Response, Status, Task, TaskParams, UserRegistration, _}
 import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.security.UserAuthentication
 import com.supertaskhelper.security.UserTokensonFormat._
+import com.supertaskhelper.service.AccountServiceActor.FindAccount
+import com.supertaskhelper.service.PaymentServiceActor.CapturePaymentFormat._
+import com.supertaskhelper.service.PaymentServiceActor.TransferPaymentFormat._
+import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, DeletePayment, FindPayment, TransferPayment}
 import com.supertaskhelper.service.TaskServiceActor.{CreateBid, CreateComment, CreateTask, DeleteTask, FindBids, FindComments, FindTask, FindTaskCategory, _}
 import com.supertaskhelper.service.UserServiceActor.{CreateUser, _}
 import com.supertaskhelper.service.actors.ActivityActor
-import com.supertaskhelper.service.{Code, CreateMessage, _}
+import com.supertaskhelper.service.{Code, CreateMessage, EmailSentService, PaymentServiceActor, TaskServiceActor, _}
 import spray.http.MediaTypes
 import spray.httpx.SprayJsonSupport._
 import spray.routing.{RequestContext, _}
@@ -44,6 +50,16 @@ class RouteHttpServiceActor extends Actor with RouteHttpService with ActorLoggin
 trait RouteHttpService extends HttpService with UserAuthentication with EmailSentService {
 
   private var requestCount = 0
+
+  def createPerPaymentActor(ctx: RequestContext): ActorRef = {
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[PaymentServiceActor], ctx), s"IndexRequest-${requestCount}")
+  }
+
+  def createPerAccountActor(ctx: RequestContext): ActorRef = {
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[AccountServiceActor], ctx), s"IndexRequest-${requestCount}")
+  }
 
   def createPerTaskActor(ctx: RequestContext): ActorRef = {
     requestCount += 1
@@ -118,6 +134,25 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               ctx =>
                 val perRequestUserActor = createPerUserActor(ctx)
                 perRequestUserActor ! FindSkills(userId)
+            }
+
+          }
+        }
+      } ~ path("users" / "account" / RestPath) { id =>
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            ctx =>
+              val paymentActor = createPerAccountActor(ctx)
+              paymentActor ! FindAccount(id.toString())
+          }
+        }
+      } ~ path("users" / "account") {
+        post {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            entity(as[Account]) { account =>
+              ctx => val paymentActor = createPerAccountActor(ctx)
+              paymentActor ! account
+
             }
 
           }
@@ -295,7 +330,9 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               'page.as[Int].?,
               'sizePage.as[Int].?,
               'distance.as[String].?,
-              'language.as[String].?).as(TaskParams) { params =>
+              'language.as[String].?,
+              'bidSthId.as[String].?,
+              'hireSthId.as[String].?).as(TaskParams) { params =>
                 ctx =>
                   val perRequestSearchingActor = createPerTaskActor(ctx)
                   perRequestSearchingActor ! FindTask(params)
@@ -366,7 +403,57 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
           }
         }
-      }
+      } ~
+        path("payments") {
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              entity(as[Payment]) { payment =>
+                ctx => val paymentActor = createPerPaymentActor(ctx)
+                paymentActor ! payment
+
+              }
+
+            }
+          }
+        } ~ path("payments" / "capture") {
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+
+              entity(as[CapturePayment]) { payment =>
+                ctx => val paymentActor = createPerPaymentActor(ctx)
+                paymentActor ! payment
+
+              }
+            }
+          }
+
+        } ~ path("payments" / "transfer") {
+          post {
+            respondWithMediaType(MediaTypes.`application/json`) {
+
+              entity(as[TransferPayment]) { payment =>
+                ctx => val paymentActor = createPerPaymentActor(ctx)
+                paymentActor ! payment
+
+              }
+            }
+          }
+
+        } ~ path("payments" / RestPath) { id =>
+          get {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              ctx =>
+                val paymentActor = createPerPaymentActor(ctx)
+                paymentActor ! FindPayment(id.toString())
+            }
+          } ~ delete {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              ctx =>
+                val paymentActor = createPerPaymentActor(ctx)
+                paymentActor ! DeletePayment(id.toString())
+            }
+          }
+        }
 
     } ~
       path("") {
