@@ -6,9 +6,7 @@ import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.util.Password
 import com.supertaskhelper.domain.Account
 
-trait AccountService extends Service with UserService with PaymentService{
-
-
+trait AccountService extends Service with UserService with PaymentService {
 
   def buildAccount(t: DBObject): Option[Account] = {
     val account = Account(
@@ -47,7 +45,6 @@ trait AccountService extends Service with UserService with PaymentService{
     val collection = MongoFactory.getCollection("user")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(account.userId))
 
-
     var setdata = $set("password" -> Password.getSaltedHash(account.password),
       "okForSMS" -> account.sms,
       "paypalEmail" -> account.paypalEmail,
@@ -57,17 +54,22 @@ trait AccountService extends Service with UserService with PaymentService{
       "email" -> account.email)
 
     val user = findUserById(account.userId)._2
-    if(!user.isSTH)
-      setdata.put("mobile", account.mobile)
+    if (!user.isSTH) {
+      setdata = $set("password" -> Password.getSaltedHash(account.password),
+        "okForSMS" -> account.sms,
+        "paypalEmail" -> account.paypalEmail,
+        "mobile" -> account.mobile,
+        "okForEmailsAboutComments" -> account.okForEmailsAboutComments,
+        "okForEmailsAboutBids" -> account.okForEmailsAboutBids,
+        "email" -> account.email)
+    }
 
     collection update (q, setdata)
 
   }
 
-
-
   def checkPaypalEmail(paypalEmail: String) = {
-     isPaypalEmailValid(paypalEmail)
+    isPaypalEmailValid(paypalEmail)
   }
 
 }

@@ -222,15 +222,15 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               }
           }
         }
-      }~ path("tasks" / "toassign") {
+      } ~ path("tasks" / "toassign") {
         get {
           respondWithMediaType(MediaTypes.`application/json`) {
             parameters(
               'taskId.as[String]) { taskId =>
-              ctx =>
-                val perRequestSearchingActor = createPerTaskActor(ctx)
-                perRequestSearchingActor ! FindBids(taskId)
-            }
+                ctx =>
+                  val perRequestSearchingActor = createPerTaskActor(ctx)
+                  perRequestSearchingActor ! FindBids(taskId)
+              }
           }
         }
       } ~ path("tasks" / "bids") {
@@ -471,17 +471,17 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             }
           }
         } ~ path("dashboard") {
-        get {
-          respondWithMediaType(MediaTypes.`application/json`) {
-            parameters(
-              'userId.as[String]).as(LoadDashboard)  { ldash =>
-              ctx => val ldashActor = createPerDashboardActor(ctx)
-                ldashActor ! ldash
+          get {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              parameters(
+                'userId.as[String]).as(LoadDashboard) { ldash =>
+                  ctx => val ldashActor = createPerDashboardActor(ctx)
+                  ldashActor ! ldash
 
+                }
             }
           }
         }
-      }
 
     } ~
       path("") {

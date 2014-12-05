@@ -145,7 +145,7 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
       List()
   }
 
-  def isPaypalEmailValid(paypalEmail:String): Boolean = {
+  def isPaypalEmailValid(paypalEmail: String): Boolean = {
     PaymentService.isPaypalEmailValid(paypalEmail)
   }
 
@@ -201,8 +201,6 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
 
   override def getClosedPayments(`type`: PAYMENT_TYPE): util.List[com.supertaskhelper.common.domain.Payment] = ???
 
-
-
 }
 
 object PaymentService {
@@ -214,7 +212,7 @@ object PaymentService {
     iPaypalService.capturePayment(taskId)
   }
 
-  def isPaypalEmailValid(paypalEmail:String): Boolean = {
+  def isPaypalEmailValid(paypalEmail: String): Boolean = {
     iPaypalService.isValidEmailWithAccount(paypalEmail)
   }
 

@@ -30,7 +30,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
     val q = buildQuery(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
-    var result =(collection find q).sort(MongoDBObject("createdDate" -> -1))
+    var result = (collection find q).sort(MongoDBObject("createdDate" -> -1))
       .skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
       .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x, params.distance)).toSeq
     result

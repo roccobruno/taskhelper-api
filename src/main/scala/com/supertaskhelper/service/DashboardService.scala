@@ -34,7 +34,7 @@ trait DashboardService extends TaskService {
 
     val turnover = PaymentUtil.populateModelWithTurnoverForm(userId.get, service)
 
-var res=    Dashboard(tPTasksStats, sTHTasksStats, ObligationToPay(obbligations.getAlreadyPaid, obbligations.getAlreadyApproved,
+    var res = Dashboard(tPTasksStats, sTHTasksStats, ObligationToPay(obbligations.getAlreadyPaid, obbligations.getAlreadyApproved,
       obbligations.getToPay, obbligations.getRefunded), Turnover(turnover.getToWithdraw,
       turnover.getComingIncome, turnover.getComingIncomeOnceDone, turnover.getWithdrew))
 

@@ -9,8 +9,8 @@ import spray.httpx.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol
 import spray.routing.RequestContext
 
-class DashboardServiceActor (httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging
-with DashboardService{
+class DashboardServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging
+    with DashboardService {
 
   def receive = LoggingReceive {
 
@@ -24,8 +24,8 @@ with DashboardService{
 }
 
 object DashboardServiceActor {
-  case class LoadDashboard(userId:String) {
-    require(!userId.isEmpty,"userId cannot be empty")
+  case class LoadDashboard(userId: String) {
+    require(!userId.isEmpty, "userId cannot be empty")
   }
 
   object LoadDashboardJsonFormat extends DefaultJsonProtocol {
