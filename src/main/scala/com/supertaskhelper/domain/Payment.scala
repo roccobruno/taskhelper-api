@@ -15,7 +15,8 @@ case class Payment(id: String,
     currency: String,
     amountForSth: String,
     status: Option[String], // check TASK_STATUS
-    paymentType: Option[String]) //check PAYMENT_TYPE
+    paymentType: Option[String],
+    capturedDate: Option[Date]) //check PAYMENT_TYPE
     {
 
   require(!id.isEmpty, "id cannot be empty. It is the Paypal payment Id")
@@ -45,6 +46,6 @@ object PaymentJsonFormat extends DefaultJsonProtocol {
       case _ => deserializationError("Date expected")
     }
   }
-  implicit val paymentFormat = jsonFormat11(Payment)
+  implicit val paymentFormat = jsonFormat12(Payment)
 }
 

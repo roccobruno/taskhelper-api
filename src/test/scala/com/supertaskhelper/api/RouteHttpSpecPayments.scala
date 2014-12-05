@@ -54,12 +54,12 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
      }
 
     val payment = Payment("PAY-2FX913169V0229117KRTXFIY",Option(new java.util.Date()),"5454dde50364b8976342f1dd","52cd1539e4b041f92f2b2b17",
-    "53977fd5e4b0acaff9dc2b54","70731830JN634773L","30","USD","23",None,None)
+    "53977fd5e4b0acaff9dc2b54","70731830JN634773L","30","USD","23",None,None,Option(new java.util.Date()))
 
     var payIdNew = "PAY-2FX913169V0229117KRTXFIY"
 
     "should save payment " in {
-      Post("/api/payments",payment) ~> route ~> check {
+      Post("http://sth-api-test-env.elasticbeanstalk.com/api/payments",payment) ~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resourse Added"))
 

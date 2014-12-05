@@ -5,13 +5,10 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.util.Password
 import com.supertaskhelper.domain.Account
-import org.slf4j.LoggerFactory
 
-trait AccountService extends Service with UserService {
+trait AccountService extends Service with UserService with PaymentService{
 
-  val logger = LoggerFactory.getLogger(classOf[AccountService])
 
-  val conn = MongoFactory.getConnection
 
   def buildAccount(t: DBObject): Option[Account] = {
     val account = Account(
@@ -50,14 +47,27 @@ trait AccountService extends Service with UserService {
     val collection = MongoFactory.getCollection("user")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(account.userId))
 
-    collection update (q, $set("password" -> Password.getSaltedHash(account.password),
+
+    var setdata = $set("password" -> Password.getSaltedHash(account.password),
       "okForSMS" -> account.sms,
       "paypalEmail" -> account.paypalEmail,
-      "mobile" -> account.mobile,
+
       "okForEmailsAboutComments" -> account.okForEmailsAboutComments,
       "okForEmailsAboutBids" -> account.okForEmailsAboutBids,
-      "email" -> account.email))
+      "email" -> account.email)
 
+    val user = findUserById(account.userId)._2
+    if(!user.isSTH)
+      setdata.put("mobile", account.mobile)
+
+    collection update (q, setdata)
+
+  }
+
+
+
+  def checkPaypalEmail(paypalEmail: String) = {
+     isPaypalEmailValid(paypalEmail)
   }
 
 }

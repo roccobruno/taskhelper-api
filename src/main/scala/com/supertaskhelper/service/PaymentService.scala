@@ -14,6 +14,8 @@ import com.supertaskhelper.service.paypal.PaypalServiceImplWrapper
 import com.supertaskhelper.util.ConverterUtil
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConversions
+
 trait PaymentService extends Service with ConverterUtil with IPaymentService {
 
   val logger = LoggerFactory.getLogger(classOf[PaymentService])
@@ -25,6 +27,7 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
     val payment = com.supertaskhelper.domain.Payment(
       id = t.getAs[String]("_id").get,
       created_date = t.getAs[java.util.Date]("created_date"),
+      capturedDate = t.getAs[java.util.Date]("capturedDate"),
       taskId = t.getAs[String]("taskId").get,
       userId = t.getAs[String]("userId").get,
       taskHelperId = t.getAs[String]("taskHelperId").get,
@@ -51,6 +54,7 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
     paym.setTaskId(t.getAs[String]("taskId").get)
     paym.setType(t.getAs[String]("type").get)
     paym.setUserId(t.getAs[String]("userId").get)
+    paym.setCapturedDate(t.getAs[java.util.Date]("capturedDate").getOrElse(new Date()))
     paym
   }
 
@@ -141,6 +145,10 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
       List()
   }
 
+  def isPaypalEmailValid(paypalEmail:String): Boolean = {
+    PaymentService.isPaypalEmailValid(paypalEmail)
+  }
+
   def transferMoneyForSTH(sthId: String, amountToTransfer: BigDecimal, currency: String, paypalEmail: String) = {
     PaymentService.transferMoneyToSTH(new math.BigDecimal(amountToTransfer.toString()), currency, sthId, paypalEmail)
   }
@@ -154,13 +162,34 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
 
   override def getPaymentsBySTHId(taskhelperId: String, status: PAYMENT_STATUS, `type`: PAYMENT_TYPE): util.List[com.supertaskhelper.common.domain.Payment] = ???
 
-  override def getPaymentsBySTHId(taskhelperId: String): util.List[com.supertaskhelper.common.domain.Payment] = ???
+  override def getPaymentsBySTHId(taskhelperId: String): util.List[com.supertaskhelper.common.domain.Payment] = {
+    val builder = MongoDBObject.newBuilder
+    builder += "taskHelperId" -> taskhelperId
+
+    val collection = MongoFactory.getCollection("payment")
+    val result = collection find builder.result
+
+    val resultList: java.util.List[com.supertaskhelper.common.domain.Payment] = new util.ArrayList()
+    resultList.addAll(JavaConversions.asJavaCollection(result.map(x => buildDiffPayment(x)).toList))
+    resultList
+  }
 
   override def updatePaymentWithPayerId(taskId: String, payerId: String): Unit = ???
 
   override def getAllTheNotReauthorizedApproved: util.List[com.supertaskhelper.common.domain.Payment] = ???
 
-  override def getPaymentsByUserId(userId: String, status: PAYMENT_STATUS, `type`: PAYMENT_TYPE): util.List[com.supertaskhelper.common.domain.Payment] = ???
+  override def getPaymentsByUserId(userId: String, status: PAYMENT_STATUS, `type`: PAYMENT_TYPE): util.List[com.supertaskhelper.common.domain.Payment] = {
+    val builder = MongoDBObject.newBuilder
+    builder += "userId" -> userId
+    builder += "status" -> status.toString
+    builder += "type" -> `type`.toString
+    val collection = MongoFactory.getCollection("payment")
+    val result = collection find builder.result
+
+    val resultList: java.util.List[com.supertaskhelper.common.domain.Payment] = new util.ArrayList()
+    resultList.addAll(JavaConversions.asJavaCollection(result.map(x => buildDiffPayment(x)).toList))
+    resultList
+  }
 
   override def getPaymentsByUserId(userId: String): util.List[com.supertaskhelper.common.domain.Payment] = ???
 
@@ -172,19 +201,25 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
 
   override def getClosedPayments(`type`: PAYMENT_TYPE): util.List[com.supertaskhelper.common.domain.Payment] = ???
 
-  object PaymentService {
 
-    val iPaypalService = new PaypalServiceImplWrapper()
 
-    def capturePayment(taskId: String): Unit = {
+}
 
-      iPaypalService.capturePayment(taskId)
-    }
+object PaymentService {
 
-    def transferMoneyToSTH(amountToTransfer: java.math.BigDecimal, currency: String, sthId: String, paypalEmail: String): Unit = {
-      iPaypalService.transferFundToSth(sthId, amountToTransfer, currency, paypalEmail)
-    }
+  val iPaypalService = new PaypalServiceImplWrapper()
 
+  def capturePayment(taskId: String): Unit = {
+
+    iPaypalService.capturePayment(taskId)
+  }
+
+  def isPaypalEmailValid(paypalEmail:String): Boolean = {
+    iPaypalService.isValidEmailWithAccount(paypalEmail)
+  }
+
+  def transferMoneyToSTH(amountToTransfer: java.math.BigDecimal, currency: String, sthId: String, paypalEmail: String): Unit = {
+    iPaypalService.transferFundToSth(sthId, amountToTransfer, currency, paypalEmail)
   }
 
 }

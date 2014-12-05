@@ -30,9 +30,10 @@ trait TaskService extends Service with ConverterUtil with CityService {
     val q = buildQuery(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
-    (collection find q).sort(MongoDBObject("createdDate" -> -1))
+    var result =(collection find q).sort(MongoDBObject("createdDate" -> -1))
       .skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
       .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x, params.distance)).toSeq
+    result
   }
 
   private def buildQuery(params: TaskParams): DBObject = {
@@ -113,7 +114,8 @@ trait TaskService extends Service with ConverterUtil with CityService {
         requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
         hireSthId = taskResult.getAs[String]("hireSthId"),
         taskPrice = Option(taskPrice),
-        doneBy = taskResult.getAs[Boolean]("doneBy")
+        doneBy = taskResult.getAs[Boolean]("doneBy"),
+        bidAcceptedId = taskResult.getAs[String]("bidAcceptedId")
       )
       Option(task) //return the task object
 

@@ -18,6 +18,8 @@ import com.supertaskhelper.search.SearchActor
 import com.supertaskhelper.security.UserAuthentication
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.AccountServiceActor.FindAccount
+import com.supertaskhelper.service.DashboardServiceActor.LoadDashboard
+import com.supertaskhelper.service.DashboardServiceActor.LoadDashboardJsonFormat._
 import com.supertaskhelper.service.PaymentServiceActor.CapturePaymentFormat._
 import com.supertaskhelper.service.PaymentServiceActor.TransferPaymentFormat._
 import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, DeletePayment, FindPayment, TransferPayment}
@@ -54,6 +56,11 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
   def createPerPaymentActor(ctx: RequestContext): ActorRef = {
     requestCount += 1
     actorRefFactory.actorOf(Props(classOf[PaymentServiceActor], ctx), s"IndexRequest-${requestCount}")
+  }
+
+  def createPerDashboardActor(ctx: RequestContext): ActorRef = {
+    requestCount += 1
+    actorRefFactory.actorOf(Props(classOf[DashboardServiceActor], ctx), s"IndexRequest-${requestCount}")
   }
 
   def createPerAccountActor(ctx: RequestContext): ActorRef = {
@@ -214,6 +221,17 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
                   perRequestSearchingActor ! terms
                 //              }
               }
+          }
+        }
+      }~ path("tasks" / "toassign") {
+        get {
+          respondWithMediaType(MediaTypes.`application/json`) {
+            parameters(
+              'taskId.as[String]) { taskId =>
+              ctx =>
+                val perRequestSearchingActor = createPerTaskActor(ctx)
+                perRequestSearchingActor ! FindBids(taskId)
+            }
           }
         }
       } ~ path("tasks" / "bids") {
@@ -453,7 +471,18 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
                 paymentActor ! DeletePayment(id.toString())
             }
           }
+        } ~ path("dashboard") {
+        post {
+          respondWithMediaType(MediaTypes.`application/json`) {
+
+            entity(as[LoadDashboard]) { ldash =>
+              ctx => val ldashActor = createPerDashboardActor(ctx)
+                ldashActor ! ldash
+
+            }
+          }
         }
+      }
 
     } ~
       path("") {

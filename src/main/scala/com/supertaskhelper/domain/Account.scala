@@ -1,37 +1,10 @@
 package com.supertaskhelper.domain
 
+
+import com.supertaskhelper.common.util.ValidatorUtil
+import com.supertaskhelper.service.PaymentService
 import spray.json._
 
-/*
-
-
-
-private   var email : String = null
-
-
-private   var mobile : String = null
-
-
-private   var sms : Boolean = false
-
-
-private   var okForEmailsAboutBids : Boolean = false
-
-
-private   var okForEmailsAboutComments : Boolean = false
-
-
-private   var password : String = null
-
-
-private   var newPassword : String = null
-
-
-private   var hasFacebookConnection : Boolean = false
-
-
-private   var paypalEmail : String = null
- */
 case class Account(userId: String,
     email: String,
     mobile: Option[String],
@@ -43,8 +16,9 @@ case class Account(userId: String,
     hasFacebookConnection: Boolean,
     paypalEmail: Option[String]) {
 
-  require(!email.isEmpty, "email cannot be empty")
-  require(!password.isEmpty, "password cannot be empty")
+  require(!email.isEmpty && ValidatorUtil.isValidEmail(email), "email cannot be empty")
+  require(!password.isEmpty , "password cannot be empty")
+  require(paypalEmail.isEmpty || PaymentService.isPaypalEmailValid(paypalEmail.get),"paypal email not valid")
 }
 
 object AccountJsonFormat extends DefaultJsonProtocol {

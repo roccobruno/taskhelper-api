@@ -56,7 +56,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
     "WITH_AUCTION_ONLY",
     Option("52515bb0e4b094388a43ca39"),
     Option(taskPrice),
-    Option(true)
+    Option(true),
+   None
 
   )
 

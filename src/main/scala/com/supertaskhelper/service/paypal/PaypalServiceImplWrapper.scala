@@ -13,7 +13,9 @@ class PaypalServiceImplWrapper extends IPayPalService {
     PaypalServiceImplWrapper.getToken()
   }
 
-  override def isValidEmailWithAccount(paypalEmail: String): Boolean = ???
+  override def isValidEmailWithAccount(paypalEmail: String): Boolean = {
+    PaypalServiceImplWrapper.iPaypalService.isValidEmailWithAccount(paypalEmail)
+  }
 
   override def refundPayment(taskId: String, amountToRefund: math.BigDecimal, currency: String): Boolean = ???
 
