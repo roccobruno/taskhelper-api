@@ -19,7 +19,6 @@ import com.supertaskhelper.security.UserAuthentication
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.AccountServiceActor.FindAccount
 import com.supertaskhelper.service.DashboardServiceActor.LoadDashboard
-import com.supertaskhelper.service.DashboardServiceActor.LoadDashboardJsonFormat._
 import com.supertaskhelper.service.PaymentServiceActor.CapturePaymentFormat._
 import com.supertaskhelper.service.PaymentServiceActor.TransferPaymentFormat._
 import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, DeletePayment, FindPayment, TransferPayment}
@@ -472,10 +471,10 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
             }
           }
         } ~ path("dashboard") {
-        post {
+        get {
           respondWithMediaType(MediaTypes.`application/json`) {
-
-            entity(as[LoadDashboard]) { ldash =>
+            parameters(
+              'userId.as[String]).as(LoadDashboard)  { ldash =>
               ctx => val ldashActor = createPerDashboardActor(ctx)
                 ldashActor ! ldash
 

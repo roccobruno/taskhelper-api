@@ -3,8 +3,6 @@ package com.supertaskhelper.api
 import com.supertaskhelper.domain.Dashboard
 import com.supertaskhelper.domain.DashboardJsonFormat._
 import com.supertaskhelper.router.RouteHttpService
-import com.supertaskhelper.service.DashboardServiceActor.LoadDashboard
-import com.supertaskhelper.service.DashboardServiceActor.LoadDashboardJsonFormat._
 import org.scalatest.{Matchers, WordSpecLike}
 import spray.http.StatusCodes
 import spray.httpx.SprayJsonSupport._
@@ -36,7 +34,7 @@ class RouteHttpSpecDashboard extends WordSpecLike with ScalatestRouteTest with M
     val userId="53028f49036462126f7f042b"
 
      "return dashboard with id" in {
-       Post("/api/dashboard",LoadDashboard(userId)) ~> route ~> check {
+       Get("/api/dashboard?userId="+userId) ~> route ~> check {
          status should be(StatusCodes.OK)
          assert(responseAs[Dashboard].taskAsTP.assigned == 1)
            assert(responseAs[Dashboard].taskAsTP.completed == 1)
