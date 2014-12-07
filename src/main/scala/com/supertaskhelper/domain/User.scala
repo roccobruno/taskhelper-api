@@ -3,7 +3,6 @@ package com.supertaskhelper.domain
 import java.text.SimpleDateFormat
 import java.util.{Date, Locale}
 
-import com.supertaskhelper.common.domain.Country
 import com.supertaskhelper.common.enums.SOURCE
 import com.supertaskhelper.domain.search.Searchable
 import spray.json._
@@ -29,27 +28,11 @@ case class User(userName: String,
   fbBudget: Option[Boolean],
   twitterBudget: Option[Boolean],
   linkedInBudget: Option[Boolean], securityDocVerified: Option[Boolean], emailVerified: Option[Boolean], idDocVerified: Option[Boolean],
-  webcamVerified: Option[Boolean], accountStatus: Option[String], averageRating: Option[Int], numOfFeedbacks: Option[Int], country: Option[Country])
+  webcamVerified: Option[Boolean], accountStatus: Option[String], averageRating: Option[Int], numOfFeedbacks: Option[Int], country: Option[String])
     extends Searchable
 object UserJsonFormat extends DefaultJsonProtocol {
   implicit val locationFormat = jsonFormat2(Location)
   implicit val addressFormat = jsonFormat6(Address)
-  implicit object CountryFormat extends RootJsonFormat[Country] {
-    def write(c: Country) = {
-
-      JsString(c.toString)
-    }
-
-    def read(value: JsValue) = value match {
-      case JsString(value) => {
-
-        Country.getByName(value)
-
-      }
-
-      case _ => deserializationError("Country expected")
-    }
-  }
   implicit val userFormat = jsonFormat21(User)
 }
 

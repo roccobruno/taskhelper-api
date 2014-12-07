@@ -1,6 +1,5 @@
 package com.supertaskhelper.service
 
-import com.supertaskhelper.common.domain.Country
 import com.supertaskhelper.common.service.ipaddress.CountryCheckerServiceImpl
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
@@ -9,9 +8,9 @@ import org.springframework.web.client.RestTemplate
 trait CountryCheckerService {
   val logger = LoggerFactory.getLogger(classOf[CountryCheckerService])
 
-  def checkCountryForIpAddress(ip: Option[String]): Option[Country] = {
+  def checkCountryForIpAddress(ip: Option[String]): Option[String] = {
     if (ip.isDefined) {
-      var res: Option[Country] = None
+      var res: Option[String] = None
       try {
         res = Some(CountryCheckerService.countryForIp(ip.get))
       } catch {
@@ -35,9 +34,9 @@ object CountryCheckerService {
 
   countryService.setRestTemplate(new RestTemplate())
 
-  def countryForIp(ip: String): Country = {
+  def countryForIp(ip: String): String = {
 
-    countryService.checkFromIPAddress(ip)
+    countryService.getCountryFromIPAddress(ip).getCode
 
   }
 

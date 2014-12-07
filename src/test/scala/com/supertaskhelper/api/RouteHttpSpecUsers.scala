@@ -92,6 +92,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
        status should be(StatusCodes.OK)
        assert(responseAs[User].id == userId.get)
        assert(responseAs[User].email == userEmail)
+       assert(responseAs[User].country == Some("IT"))
        assert(responseAs[User].userName == "test_rocco")
        assert(responseAs[User].lastName == "test_lastname")
        assert(responseAs[User].accountStatus.get == ACCOUNT_STATUS.TOAPPROVE.toString)

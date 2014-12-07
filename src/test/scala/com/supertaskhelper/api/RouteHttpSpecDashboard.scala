@@ -39,7 +39,7 @@ class RouteHttpSpecDashboard extends WordSpecLike with ScalatestRouteTest with M
          assert(responseAs[Dashboard].taskAsTP.assigned == 1)
            assert(responseAs[Dashboard].taskAsTP.completed == 1)
            assert(responseAs[Dashboard].taskAsTP.open ==1)
-           assert(responseAs[Dashboard].taskAsTP.closed ==2)
+           assert(responseAs[Dashboard].taskAsTP.closed ==3)
            assert(responseAs[Dashboard].taskAsTP.requested ==8)
            assert(responseAs[Dashboard].taskAsTP.waitingReview ==1)
 

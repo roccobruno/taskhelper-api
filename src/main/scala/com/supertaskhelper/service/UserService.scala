@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 import com.supertaskhelper.MongoFactory
-import com.supertaskhelper.common.domain.{Country, Password}
+import com.supertaskhelper.common.domain.Password
 import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.{Address, Location, User, UserRegistration, _}
 import com.supertaskhelper.util.ConverterUtil
@@ -182,7 +182,7 @@ trait UserService extends Service with ConverterUtil {
         accountStatus = userResult.getAs[String]("accountStatus"),
         averageRating = userResult.getAs[Int]("averageRating"),
         numOfFeedbacks = userResult.getAs[Int]("numOfFeedbacks"),
-        country = userResult.getAs[Country]("country")
+        country = userResult.getAs[String]("country")
       )
       (true, user)
     } else
@@ -262,7 +262,7 @@ trait UserService extends Service with ConverterUtil {
       (false, userToken)
   }
 
-  def saveUser(registrationUser: UserRegistration, locale: Locale, country: Option[Country]): String = {
+  def saveUser(registrationUser: UserRegistration, locale: Locale, country: Option[String]): String = {
     val collection = MongoFactory.getCollection("user")
     //first have to delete previous requests
     val q = MongoDBObject("email" -> registrationUser.email)
@@ -273,7 +273,7 @@ trait UserService extends Service with ConverterUtil {
     userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
-  def getUserMongoDBObject(registrationUser: UserRegistration, locale: Locale, country: Option[Country]): MongoDBObject = {
+  def getUserMongoDBObject(registrationUser: UserRegistration, locale: Locale, country: Option[String]): MongoDBObject = {
     var args: Map[String, Any] = Map()
 
     args = args + ("username" -> registrationUser.userName)
