@@ -176,20 +176,27 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
         }
       } ~ path("users") {
         get {
-          respondWithMediaType(MediaTypes.`application/json`) {
-            parameters('id.as[String].?, 'email.as[String].?).as(UserSearchParams) { userSearchParams =>
-              ctx =>
-                val perRequestUserActor = createPerUserActor(ctx)
-                perRequestUserActor ! userSearchParams
+          optionalHeaderValueByName("Remote-Address") { ipadd =>
+            optionalHeaderValueByName("X-FORWARDED-FOR") { ip =>
+              respondWithMediaType(MediaTypes.`application/json`) {
+                parameters('id.as[String].?, 'email.as[String].?).as(UserSearchParams) { userSearchParams =>
+                  ctx =>
+                    val perRequestUserActor = createPerUserActor(ctx)
+                    val ipaddres = headerValueByName("X-FORWARDED-FOR")
+                    println(ipadd + " " + ip)
+                    perRequestUserActor ! userSearchParams
+                }
+              }
             }
-
           }
         } ~
           post {
             respondWithMediaType(MediaTypes.`application/json`) {
               entity(as[UserRegistration]) { user =>
                 ctx => val perRequestSearchingActor = createPerUserActor(ctx)
-                perRequestSearchingActor ! CreateUser(user, "it")
+                val ipaddres = headerValueByName("X-FORWARDED-FOR")
+                println(Some(ipaddres + "" + headerValueByName("Remote-Address")))
+                perRequestSearchingActor ! CreateUser(user, "it", None)
 
               }
             }

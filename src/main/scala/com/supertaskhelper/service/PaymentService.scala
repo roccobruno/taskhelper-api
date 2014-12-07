@@ -43,8 +43,6 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
 
   def buildDiffPayment(t: DBObject): com.supertaskhelper.common.domain.Payment = {
 
-
-
     var paym = new com.supertaskhelper.common.domain.Payment();
     paym.setAmount(new java.math.BigDecimal(t.getAs[String]("amount").getOrElse("0")))
     paym.setAmountForSth(new java.math.BigDecimal(t.getAs[String]("amountForSth").getOrElse("0")))

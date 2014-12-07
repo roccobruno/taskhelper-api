@@ -1,28 +1,21 @@
 package com.supertaskhelper.service
 
-import akka.actor.{ Props, ActorLogging, Actor }
-import com.supertaskhelper.util.ActorFactory
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.event.LoggingReceive
-
-import com.supertaskhelper.service.UserServiceActor.{ FindFeedbacks, FindSkills, DeleteUser, CreateUser }
-import com.supertaskhelper.common.domain.Password
-import com.supertaskhelper.domain.search.UserSearchParams
-import spray.routing.RequestContext
-
-import com.supertaskhelper.domain.search.UserSearchParams
-import spray.routing.RequestContext
-import com.supertaskhelper.domain.ResponseJsonFormat._
-import spray.httpx.SprayJsonSupport._
-import com.supertaskhelper.domain.UserJsonFormat._
-import com.supertaskhelper.domain.FeedbackJsonFormat._
-import com.supertaskhelper.domain.FeedbacksJsonFormat._
-import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
-import com.supertaskhelper.domain.TaskCategoryJsonFormat._
-import com.supertaskhelper.domain.{ Response, LocaleLanguage, UserRegistration }
-import com.supertaskhelper.common.jms.alerts.ConfirmationEmailAlert
 import com.supertaskhelper.common.enums.SOURCE
-import spray.http.StatusCodes
+import com.supertaskhelper.common.jms.alerts.ConfirmationEmailAlert
+import com.supertaskhelper.domain.FeedbacksJsonFormat._
+import com.supertaskhelper.domain.ResponseJsonFormat._
+import com.supertaskhelper.domain.TaskCategoriesJsonFormat._
+import com.supertaskhelper.domain.UserJsonFormat._
+import com.supertaskhelper.domain.search.UserSearchParams
+import com.supertaskhelper.domain.{LocaleLanguage, Response, UserRegistration}
+import com.supertaskhelper.service.UserServiceActor.{CreateUser, DeleteUser, FindFeedbacks, FindSkills}
+import com.supertaskhelper.util.ActorFactory
 import org.bson.types.ObjectId
+import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
+import spray.routing.RequestContext
 
 /**
  * Created with IntelliJ IDEA.
@@ -35,8 +28,9 @@ class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with
     with UserService with AlertMessageService with EmailSentService {
   def receive = LoggingReceive {
 
-    case CreateUser(user: UserRegistration, language: String) => {
+    case CreateUser(user: UserRegistration, language: String, ipAddtess: Option[String]) => {
 
+      log.info(s"ip:${ipAddtess}")
       if (UserUtil.isAlreadyUsed(user.email)) {
         ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "Email already used")
       } else {
@@ -105,7 +99,7 @@ object UserServiceActor {
     require(!id.isEmpty, "id is mandatory")
     require(ObjectId.isValid(id), "id provided not valid")
   }
-  case class CreateUser(user: UserRegistration, language: String)
+  case class CreateUser(user: UserRegistration, language: String, ipAddress: Option[String])
   case class FindSkills(userId: String)
   case class FindFeedbacks(userId: String)
   def props(name: String) = Props(classOf[UserServiceActor], name)
