@@ -31,7 +31,7 @@ class RouteHttpSpecDashboard extends WordSpecLike with ScalatestRouteTest with M
 
 
     val payId = "PAY-1FX913169V0229117KRTXFIY"
-    val userId="53028f49036462126f7f042b"
+      val userId="53028f49036462126f7f042b"
 
      "return dashboard with id" in {
        Get("/api/dashboard?userId="+userId) ~> route ~> check {

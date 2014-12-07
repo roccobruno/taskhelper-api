@@ -6,7 +6,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.supertaskhelper.MongoFactory
-import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE}
+import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE, TASK_TYPE}
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.util.ConverterUtil
 import org.bson.types.ObjectId
@@ -89,11 +89,13 @@ trait TaskService extends Service with ConverterUtil with CityService {
       val tariffWithoutFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
       val tariffWithFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
 
+      val taskType = if (address.address.isDefined) TASK_TYPE.OFFLINE.toString else TASK_TYPE.ONLINE.toString
       val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
         taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
         tariffWithoutFeeForSTH, tariffWithFeeForSTH)
+
       val task = Task(
         title = taskResult.getAs[String]("title").getOrElse(""),
         id = taskResult.getAs[ObjectId]("_id"),
@@ -109,14 +111,14 @@ trait TaskService extends Service with ConverterUtil with CityService {
         distance = distance,
         category = taskResult.getAs[String]("category"),
         categoryId = taskResult.getAs[String]("categoryId"),
-        taskType = taskResult.getAs[String]("type").get,
+        taskType = taskResult.getAs[String]("type").getOrElse(taskType),
         badges = Option(badg),
         requestType = taskResult.getAs[String]("requestType").getOrElse(TASK_REQUEST_TYPE.WITH_AUCTION_ONLY.toString),
         hireSthId = taskResult.getAs[String]("hireSthId"),
         taskPrice = Option(taskPrice),
         doneBy = taskResult.getAs[Boolean]("doneBy"),
         bidAcceptedId = taskResult.getAs[String]("bidAcceptedId"),
-      currency = taskResult.getAs[String]("currency")
+        currency = taskResult.getAs[String]("currency")
       )
       Option(task) //return the task object
 
@@ -405,7 +407,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       "secDocBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.secDocBudgetRequired else false),
       "webcamBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.webcamBudgetRequired else false),
       "passportIdBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.passportIdBudgetRequired else false),
-       "currency" -> task.currency.getOrElse(""),
+      "currency" -> task.currency.getOrElse(""),
       "address" -> (if (useTaskAddress) getMongoDBObjFromAddress(task.address.get) else getAddressForTaskOnlineMongodbObject)
 
     )

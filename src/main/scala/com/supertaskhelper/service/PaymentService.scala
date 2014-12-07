@@ -42,18 +42,21 @@ trait PaymentService extends Service with ConverterUtil with IPaymentService {
   }
 
   def buildDiffPayment(t: DBObject): com.supertaskhelper.common.domain.Payment = {
+
+
+
     var paym = new com.supertaskhelper.common.domain.Payment();
     paym.setAmount(new java.math.BigDecimal(t.getAs[String]("amount").getOrElse("0")))
     paym.setAmountForSth(new java.math.BigDecimal(t.getAs[String]("amountForSth").getOrElse("0")))
-    paym.setAuthId(t.getAs[String]("authId").get)
+    paym.setAuthId(t.getAs[String]("authId").getOrElse(""))
     paym.setCreated_date(t.getAs[java.util.Date]("created_date").getOrElse(new Date()))
-    paym.setCurrency(t.getAs[String]("currency").get)
+    paym.setCurrency(t.getAs[String]("currency").getOrElse(""))
     paym.setId(t.getAs[String]("_id").get)
-    paym.setStatus(t.getAs[String]("status").get)
-    paym.setTaskHelperId(t.getAs[String]("taskHelperId").get)
-    paym.setTaskId(t.getAs[String]("taskId").get)
-    paym.setType(t.getAs[String]("type").get)
-    paym.setUserId(t.getAs[String]("userId").get)
+    paym.setStatus(t.getAs[String]("status").getOrElse(""))
+    paym.setTaskHelperId(t.getAs[String]("taskHelperId").getOrElse(""))
+    paym.setTaskId(t.getAs[String]("taskId").getOrElse(""))
+    paym.setType(t.getAs[String]("type").getOrElse(""))
+    paym.setUserId(t.getAs[String]("userId").getOrElse(""))
     paym.setCapturedDate(t.getAs[java.util.Date]("capturedDate").getOrElse(new Date()))
     paym
   }

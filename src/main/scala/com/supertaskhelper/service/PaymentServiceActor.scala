@@ -30,6 +30,7 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
     }
 
     case payment: Payment => {
+      //TODO update task with ASSIGNED
       val response = savePayment(payment)
       httpRequestContext.complete(response)
       context.stop(self)
@@ -42,7 +43,7 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
     }
 
     case capture: CapturePayment => {
-
+      //TODO update task with ClOSED
       try {
         PaymentService.capturePayment(capture.taskId)
         httpRequestContext.complete(Response("Success", "1"))

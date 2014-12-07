@@ -33,13 +33,13 @@ case class Address(address: Option[String], city: Option[String], country: Strin
 case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
     bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
     categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice],
-    doneBy: Option[Boolean], bidAcceptedId: Option[String],currency:Option[String]) extends Searchable {
+    doneBy: Option[Boolean], bidAcceptedId: Option[String], currency: Option[String]) extends Searchable {
 
   require(createdDate != null, "createdDate cannot be null")
   require(!title.isEmpty, "title cannot be empty")
   require(!description.isEmpty, "description cannot be empty")
   require(!taskType.isEmpty, "taskType cannot be empty")
-  require(taskType == "ONLINE" || taskType == "OFFLINE", "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
+  require(taskType == "ONLINE" || taskType == "OFFLINE" || taskType == "online" || taskType == "offline", "taskType can be either ONLINE or OFFLINE. When OFFLINE an address must be supplied")
   require(endDate != null, "endDate cannot be empty")
   require(!time.isEmpty, "time cannot be empty")
   require(!status.isEmpty, "status cannot be empty")
