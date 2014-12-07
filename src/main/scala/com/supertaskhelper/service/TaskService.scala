@@ -386,7 +386,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       "category" -> task.categoryId,
       "categoryId" -> task.categoryId,
       "type" -> task.taskType,
-      "doneBy" -> task.doneBy,
+      "doneBy" -> task.doneBy.getOrElse(false),
       "hireSthId" -> task.hireSthId.getOrElse(""),
       "withHire" -> (if (task.hireSthId.isDefined) true else false),
       "hasPriceSuggested" -> (if (task.taskPrice.isDefined) task.taskPrice.get.hasPriceSuggested.getOrElse(false) else false),
