@@ -115,7 +115,8 @@ trait TaskService extends Service with ConverterUtil with CityService {
         hireSthId = taskResult.getAs[String]("hireSthId"),
         taskPrice = Option(taskPrice),
         doneBy = taskResult.getAs[Boolean]("doneBy"),
-        bidAcceptedId = taskResult.getAs[String]("bidAcceptedId")
+        bidAcceptedId = taskResult.getAs[String]("bidAcceptedId"),
+      currency = taskResult.getAs[String]("currency")
       )
       Option(task) //return the task object
 
@@ -404,7 +405,7 @@ trait TaskService extends Service with ConverterUtil with CityService {
       "secDocBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.secDocBudgetRequired else false),
       "webcamBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.webcamBudgetRequired else false),
       "passportIdBudgetRequired" -> (if (task.badges.isDefined) task.badges.get.passportIdBudgetRequired else false),
-
+       "currency" -> task.currency.getOrElse(""),
       "address" -> (if (useTaskAddress) getMongoDBObjFromAddress(task.address.get) else getAddressForTaskOnlineMongodbObject)
 
     )

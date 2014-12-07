@@ -57,7 +57,8 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
     Option("52515bb0e4b094388a43ca39"),
     Option(taskPrice),
     Option(true),
-   None
+   None,
+  Some("EUR")
 
   )
 
@@ -184,6 +185,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).bids.get(0).incrementedValue ==bid.incrementedValue)
         assert(responseAs[Tasks].tasks(0).bids.get(0).createdDate.isDefined)
         assert(responseAs[Tasks].tasks(0).doneBy == Option(true))
+        assert(responseAs[Tasks].tasks(0).currency == Some("EUR"))
       }
 
       val date = new GregorianCalendar()
