@@ -49,8 +49,8 @@ libraryDependencies ++= {
         "org.eclipse.jetty.orbit" %   "javax.servlet" % "3.0.0.v201112011016" % "container"  artifacts Artifact("javax.servlet", "jar", "jar"),
         "org.specs2"          %%  "specs2"        % "2.2.3" % "test",
         "org.springframework.amqp" % "spring-rabbit" % "1.1.4.RELEASE",
-        "com.supertaskhelper" % "taskhelper-common" % "0.0.3-SNAPSHOT"
-      )
+        "com.supertaskhelper" % "taskhelper-common" % "0.0.3-SNAPSHOT",
+        "com.maxmind.geoip2" % "geoip2" % "2.1.0")
       }
 
 scalariformSettings

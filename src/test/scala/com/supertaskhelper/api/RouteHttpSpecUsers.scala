@@ -58,7 +58,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
     val userReg = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco",userEmail,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
 
     "accept user registration " in new RouteHttpSpecUsers {
-      Post("/api/users",userReg) ~> route ~> check {
+      Post("/api/users",userReg) ~> addHeader("X-FORWARDED-FOR", "120.0.0.1")~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)
@@ -82,7 +82,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
         assert(responseAs[Account].paypalEmail == Some("paypal@email.com"))
       }
 
-      Post("/api/users",userReg) ~> route ~> check {
+      Post("/api/users",userReg) ~> addHeader("X-FORWARDED-FOR", "120.0.0.1")~>route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)
@@ -150,7 +150,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
 
       val userReg2 = UserRegistration("test_rocco","test_lastname","test_rocco","test_rocco",userEmail,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),None)
 
-      Post("/api/users",userReg2) ~> route ~> check {
+      Post("/api/users",userReg2) ~>addHeader("X-FORWARDED-FOR", "120.0.0.1")~> route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)
@@ -245,7 +245,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       val username = "test_rocco"
       val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
       var userId: Option[String] = None
-      Post("/api/users",userReg) ~> route ~> check {
+      Post("/api/users",userReg) ~>addHeader("X-FORWARDED-FOR", "120.0.0.1")~> route ~> check {
         status should be(StatusCodes.BadRequest)
       }
     }
@@ -265,7 +265,7 @@ class RouteHttpSpecUsers extends WordSpecLike with ScalatestRouteTest with Match
       val username = "test_rocco"
       val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
       var userId: Option[String] = None
-      Post("/api/users",userReg) ~> route ~> check {
+      Post("/api/users",userReg) ~> addHeader("X-FORWARDED-FOR", "120.0.0.1")~>route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)

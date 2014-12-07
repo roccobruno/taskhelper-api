@@ -25,16 +25,18 @@ import spray.routing.RequestContext
  * To change this template use File | Settings | File Templates.
  */
 class UserServiceActor(ctx: RequestContext) extends Actor with ActorLogging with ActorFactory
-    with UserService with AlertMessageService with EmailSentService {
+    with UserService with AlertMessageService with EmailSentService with CountryCheckerService {
   def receive = LoggingReceive {
 
     case CreateUser(user: UserRegistration, language: String, ipAddtess: Option[String]) => {
 
       log.info(s"ip:${ipAddtess}")
+
       if (UserUtil.isAlreadyUsed(user.email)) {
         ctx.complete(StatusCodes.BadRequest, CacheHeader(MaxAge404), "Email already used")
       } else {
-        val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language))
+
+        val id = saveUser(user, LocaleLanguage.getLocaleFromLanguage(language), checkCountryForIpAddress(ipAddtess))
         val alertActor = createSendAlertActor(context)
         alertActor ! new ConfirmationEmailAlert(user.email, generateEmailCode(user.email), language, SOURCE.valueOf(user.source.get))
         ctx.complete(Response("Resource Added", id))

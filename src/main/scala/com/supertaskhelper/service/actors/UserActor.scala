@@ -50,7 +50,8 @@ class UserActor extends Actor with ActorLogging with UserService {
       idDocVerified = u.idDocVerified,
       accountStatus = u.accountStatus,
       averageRating = u.numOfFeedbacks,
-      numOfFeedbacks = u.numOfFeedbacks
+      numOfFeedbacks = u.numOfFeedbacks,
+      country = u.country
 
     )
 

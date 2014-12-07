@@ -265,7 +265,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
       val userReg = UserRegistration(username,"test_lastname",password,"test_rocco",email,Option(Locale.ITALIAN),Option(SOURCE.MOBILE_ANDROID.toString),Option(address))
       var userId: Option[String] = None
       import com.supertaskhelper.domain.UserRegistrationJsonFormat._
-      Post("/api/users",userReg) ~> route ~> check {
+      Post("/api/users",userReg) ~> addHeader("X-FORWARDED-FOR", "120.0.0.1")~>route ~> check {
         status should be(StatusCodes.OK)
         assert(responseAs[Response].message.contains("Resource Added"))
         userId = Option(responseAs[Response].id)

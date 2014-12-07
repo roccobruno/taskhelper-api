@@ -6,7 +6,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.commons.TypeImports.BasicDBObject
 import com.supertaskhelper.MongoFactory
-import com.supertaskhelper.common.domain.Password
+import com.supertaskhelper.common.domain.{Country, Password}
 import com.supertaskhelper.common.enums.{ACCOUNT_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.{Address, Location, User, UserRegistration, _}
 import com.supertaskhelper.util.ConverterUtil
@@ -181,8 +181,8 @@ trait UserService extends Service with ConverterUtil {
         idDocVerified = userResult.getAs[Boolean]("idDocVerified"),
         accountStatus = userResult.getAs[String]("accountStatus"),
         averageRating = userResult.getAs[Int]("averageRating"),
-        numOfFeedbacks = userResult.getAs[Int]("numOfFeedbacks")
-
+        numOfFeedbacks = userResult.getAs[Int]("numOfFeedbacks"),
+        country = userResult.getAs[Country]("country")
       )
       (true, user)
     } else
@@ -262,44 +262,37 @@ trait UserService extends Service with ConverterUtil {
       (false, userToken)
   }
 
-  def saveUser(registrationUser: UserRegistration, locale: Locale): String = {
+  def saveUser(registrationUser: UserRegistration, locale: Locale, country: Option[Country]): String = {
     val collection = MongoFactory.getCollection("user")
     //first have to delete previous requests
     val q = MongoDBObject("email" -> registrationUser.email)
     collection remove q
 
-    val userDoc = getUserMongoDBObject(registrationUser, locale)
+    val userDoc = getUserMongoDBObject(registrationUser, locale, country)
     collection.save(userDoc)
     userDoc.getAs[org.bson.types.ObjectId]("_id").get.toString
   }
 
-  def getUserMongoDBObject(registrationUser: UserRegistration, locale: Locale): MongoDBObject = {
+  def getUserMongoDBObject(registrationUser: UserRegistration, locale: Locale, country: Option[Country]): MongoDBObject = {
+    var args: Map[String, Any] = Map()
+
+    args = args + ("username" -> registrationUser.userName)
+    args = args + ("firstName" -> registrationUser.userName)
+    args = args + ("lastName" -> registrationUser.lastname)
+    args = args + ("email" -> registrationUser.email)
+    args = args + ("isSTH" -> false)
+    args = args + ("password" -> Password.getSaltedHash(registrationUser.password))
+    args = args + ("accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString)
+    args + ("withAccount" -> true)
+    args = args + ("accountCreatedDate" -> new Date())
+    args + ("preferredLanguage" -> locale.toString)
     if (registrationUser.address.isDefined) {
-      MongoDBObject(
-        "username" -> registrationUser.userName,
-        "firstName" -> registrationUser.userName,
-        "lastName" -> registrationUser.lastname,
-        "isSTH" -> false,
-        "email" -> registrationUser.email,
-        "password" -> Password.getSaltedHash(registrationUser.password),
-        "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
-        "withAccount" -> true,
-        "accountCreatedDate" -> new Date(),
-        "preferredLanguage" -> locale.toString,
-        "address" -> getMongoDBObjFromAddress(registrationUser.address.get))
-    } else {
-      MongoDBObject(
-        "username" -> registrationUser.userName,
-        "firstName" -> registrationUser.userName,
-        "lastName" -> registrationUser.lastname,
-        "isSTH" -> false,
-        "email" -> registrationUser.email,
-        "password" -> Password.getSaltedHash(registrationUser.password),
-        "accountStatus" -> ACCOUNT_STATUS.TOAPPROVE.toString,
-        "withAccount" -> true,
-        "accountCreatedDate" -> new Date(),
-        "preferredLanguage" -> locale.toString)
+      args =  args + ("address" -> getMongoDBObjFromAddress(registrationUser.address.get))
     }
+    if (country.isDefined)
+      args =  args + ("country" -> country.get)
+
+    MongoDBObject(args.view.map { case (k, v) => (k, v) } toList)
   }
 
   def updateTimeToken(token: UserToken) = {
