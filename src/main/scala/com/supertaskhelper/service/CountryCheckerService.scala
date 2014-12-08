@@ -2,11 +2,9 @@ package com.supertaskhelper.service
 
 import com.supertaskhelper.common.service.ipaddress.CountryCheckerServiceImpl
 import com.typesafe.config.ConfigFactory
-import org.slf4j.LoggerFactory
 import org.springframework.web.client.RestTemplate
 
-trait CountryCheckerService {
-  val logger = LoggerFactory.getLogger(classOf[CountryCheckerService])
+trait CountryCheckerService extends Service{
 
   def checkCountryForIpAddress(ip: Option[String]): Option[String] = {
     if (ip.isDefined) {

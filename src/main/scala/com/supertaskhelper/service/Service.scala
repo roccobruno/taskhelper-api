@@ -1,7 +1,8 @@
 package com.supertaskhelper.service
 
-import spray.http.HttpHeaders.`Cache-Control`
+import org.slf4j.LoggerFactory
 import spray.http.CacheDirectives.`max-age`
+import spray.http.HttpHeaders.`Cache-Control`
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,6 +12,8 @@ import spray.http.CacheDirectives.`max-age`
  * To change this template use File | Settings | File Templates.
  */
 trait Service {
+
+  val logger = LoggerFactory.getLogger(classOf[Service])
 
   val CacheHeader = (maxAge: Long) => `Cache-Control`(`max-age`(maxAge)) :: Nil
 

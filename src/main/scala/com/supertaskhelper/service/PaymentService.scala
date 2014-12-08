@@ -12,15 +12,12 @@ import com.supertaskhelper.common.service.IPaymentService
 import com.supertaskhelper.domain.Response
 import com.supertaskhelper.service.paypal.PaypalServiceImplWrapper
 import com.supertaskhelper.util.ConverterUtil
-import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConversions
 
-trait PaymentService extends Service with ConverterUtil with IPaymentService {
+trait PaymentService extends Service with ConverterUtil with IPaymentService with MongodbService{
 
-  val logger = LoggerFactory.getLogger(classOf[PaymentService])
 
-  val conn = MongoFactory.getConnection
 
   def buildPayment(t: DBObject): Option[com.supertaskhelper.domain.Payment] = {
 

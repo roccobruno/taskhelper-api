@@ -6,11 +6,10 @@ import com.mongodb.BasicDBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.supertaskhelper.MongoFactory
-import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE, TASK_TYPE}
+import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE, TASK_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.util.ConverterUtil
 import org.bson.types.ObjectId
-import org.slf4j.LoggerFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,12 +18,35 @@ import org.slf4j.LoggerFactory
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService extends Service with ConverterUtil with CityService {
+trait TaskService extends Service with ConverterUtil with CityService  with MongodbService {
 
-  val logger = LoggerFactory.getLogger(classOf[TaskService])
 
-  val conn = MongoFactory.getConnection
+  def assignTask(taskId:String,sthId:String) = {
+    val task = findTaskById(taskId);
+    if(task.isDefined) {
 
+      if (task.get.status == TASK_STATUS.REQUESTACCEPTED) {
+        val offeredValue = BigDecimal(task.get.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.get.taskPrice.get.nOfHours.get))
+        val bid = Bid(Option(new Date()),
+          offeredValue.toString(),
+          BigDecimal(task.get.taskPrice.get.priceSuggested.get).toString(),
+          task.get.hireSthId.get, "", "", Some(task.get.id.toString), Some("BID_" + (new Date()).getTime), None)
+
+        createBid(bid, bid.id.get)
+
+      }
+
+        updateTaskAttribute(taskId, $set("status"->TASK_STATUS.ASSIGNED.toString,
+                             "taskHelperId"->sthId,
+                             "assignedDate" -> new Date(),
+                             "withHire"->false,
+                             "hireSthId" -> null))
+
+
+
+    }
+
+  }
   def findTask(params: TaskParams): Seq[Option[Task]] = {
 
     val q = buildQuery(params)
@@ -362,15 +384,22 @@ trait TaskService extends Service with ConverterUtil with CityService {
   }
 
   def updateTaskStatus(taskId: String, status: String) = {
-    val collection = MongoFactory.getCollection("task")
-    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
-    collection update (q, $set("status" -> status))
+    updateTaskAttribute(taskId,$set("status"->status))
   }
 
-  def updateTaskStatusAndRequestType(taskId: String, status: String, requestType: String) = {
+
+
+  def updateTaskAttribute(taskId:String,dbObj:DBObject): Unit = {
     val collection = MongoFactory.getCollection("task")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
-    collection update (q, $set("status" -> status, "requestType" -> requestType))
+    collection update (q, dbObj)
+  }
+
+
+
+  def updateTaskStatusAndRequestType(taskId: String, status: String, requestType: String) = {
+    updateTaskAttribute(taskId,$set("status" -> status, "requestType" -> requestType))
+
   }
 
   case class Price(numOfWorkingHour: Int, tariffWithoutFeeForSTH: String, tariffWithFeeForSTH: String)
