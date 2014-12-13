@@ -9,7 +9,7 @@ import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE, TASK_STATUS, TASK_TYPE}
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.util.ConverterUtil
-import org.bson.types.ObjectId
+import org.bson.types.ObjectId;
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,49 +18,79 @@ import org.bson.types.ObjectId
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService extends Service with ConverterUtil with CityService  with MongodbService with UserService {
+trait TaskService extends Service with ConverterUtil with CityService with MongodbService with UserService {
 
-
-
-  def createBidToTask(taskId:String) = {
+  def createBidToTask(taskId: String) = {
 
     val task = findTaskById(taskId).get;
 
-
-
     val offeredValue = BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.nOfHours.get))
+    val sthRes = findUserById(task.hireSthId.get)
+    val sthUsername = if (sthRes._1) sthRes._2.userName else ""
     val bid = Bid(Option(new Date()),
       offeredValue.toString(),
       BigDecimal(task.taskPrice.get.priceSuggested.get).toString(),
-      task.hireSthId.get, findUserById(task.hireSthId.get)._2.userName, "", Some(task.id.get.toString), Some("BID_" + (new Date()).getTime), None)
+      task.hireSthId.get, sthUsername, "", Some(task.id.get.toString), Some("BID_" + (new Date()).getTime), None)
 
     createBid(bid, bid.id.get)
   }
 
-  def assignTask(taskId:String,sthId:String) = {
+  def assignTask(taskId: String, sthId: String) = {
     val task = findTaskById(taskId);
-    if(task.isDefined) {
+    if (task.isDefined) {
 
-              updateTaskAttribute(taskId, $set("status"->TASK_STATUS.ASSIGNED.toString,
-                             "taskHelperId"->sthId,
-                             "assignedDate" -> new Date(),
-                             "withHire"->false,
-                             "hireSthId" -> sthId))
-
-
+      updateTaskAttribute(taskId, $set("status" -> TASK_STATUS.ASSIGNED.toString,
+        "taskHelperId" -> sthId,
+        "assignedDate" -> new Date(),
+        "withHire" -> false,
+        "hireSthId" -> sthId))
 
     }
 
   }
   def findTask(params: TaskParams): Seq[Option[Task]] = {
 
-    val q = buildQuery(params)
+    val q = buildQueryDsl(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
     var result = (collection find q).sort(MongoDBObject("createdDate" -> -1))
       .skip((params.page.getOrElse(1) - 1) * params.sizePage.getOrElse(10))
       .limit(params.sizePage.getOrElse(10)).map(x => buildTask(x, params.distance)).toSeq
     result
+  }
+
+  private def buildQueryDsl(params: TaskParams): DBObject = {
+    var res: List[(String, Any)] = List()
+    if (params.id.isDefined && ObjectId.isValid(params.id.get))
+      res = res ::: List("_id" -> new org.bson.types.ObjectId(params.id.get))
+
+    if (params.city.isDefined)
+      res = res ::: List("address.city" -> params.city.get)
+
+    if (params.status.isDefined) {
+
+      if (params.status.get.startsWith("in")) {
+        val wrapped = """(?<=\().+?(?=\))""".r;
+        val values = wrapped.findFirstIn(params.status.get).get.split(",")
+        res = res ::: List("status" -> MongoDBObject("$in" -> values))
+
+      } else
+        res = res ::: List("status" -> params.status.get)
+    }
+    if (params.tpId.isDefined)
+      res = res ::: List("userId" -> params.tpId.get)
+
+    if (params.sthId.isDefined)
+      res = res ::: List("taskHelperId" -> params.sthId.get)
+
+    if (params.hireSthId.isDefined)
+      res = res ::: List("hireSthId" -> params.hireSthId.get)
+
+    if (params.bidSthId.isDefined)
+      res = res ::: List("bids.taskhelperId" -> params.bidSthId.get)
+
+    MongoDBObject(res)
+
   }
 
   private def buildQuery(params: TaskParams): DBObject = {
@@ -71,9 +101,16 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
     if (params.city.isDefined)
       builder += "address.city" -> params.city.get
 
-    if (params.status.isDefined)
-      builder += "status" -> params.status.get
+    if (params.status.isDefined) {
 
+      if (params.status.get.startsWith("in")) {
+        val wrapped = """(?<=\().+?(?=\))""".r;
+        val values = wrapped.findFirstIn(params.status.get).get.split(",")
+        builder += "status" -> ("$in" -> values)
+
+      } else
+        builder += "status" -> params.status.get
+    }
     if (params.tpId.isDefined)
       builder += "userId" -> params.tpId.get
 
@@ -87,6 +124,7 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
       builder += "bids.taskhelperId" -> params.bidSthId.get
 
     builder.result
+
   }
 
   private def buildTask(taskResult: DBObject, distance: Option[String]): Option[Task] = {
@@ -390,21 +428,17 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
   }
 
   def updateTaskStatus(taskId: String, status: String) = {
-    updateTaskAttribute(taskId,$set("status"->status))
+    updateTaskAttribute(taskId, $set("status" -> status))
   }
 
-
-
-  def updateTaskAttribute(taskId:String,dbObj:DBObject): Unit = {
+  def updateTaskAttribute(taskId: String, dbObj: DBObject): Unit = {
     val collection = MongoFactory.getCollection("task")
     val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(taskId))
     collection update (q, dbObj)
   }
 
-
-
   def updateTaskStatusAndRequestType(taskId: String, status: String, requestType: String) = {
-    updateTaskAttribute(taskId,$set("status" -> status, "requestType" -> requestType))
+    updateTaskAttribute(taskId, $set("status" -> status, "requestType" -> requestType))
 
   }
 

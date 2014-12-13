@@ -152,8 +152,6 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
         createBidToTask(params.id)
 
-
-
         updateTaskStatus(params.id, params.status)
         sendAlertActor ! new AcceptedTaskRequestAlert(params.id, params.language.getOrElse("it"))
       }

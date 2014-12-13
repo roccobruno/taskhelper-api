@@ -287,10 +287,10 @@ trait UserService extends Service with ConverterUtil {
     args = args + ("accountCreatedDate" -> new Date())
     args + ("preferredLanguage" -> locale.toString)
     if (registrationUser.address.isDefined) {
-      args =  args + ("address" -> getMongoDBObjFromAddress(registrationUser.address.get))
+      args = args + ("address" -> getMongoDBObjFromAddress(registrationUser.address.get))
     }
     if (country.isDefined)
-      args =  args + ("country" -> country.get)
+      args = args + ("country" -> country.get)
 
     MongoDBObject(args.view.map { case (k, v) => (k, v) } toList)
   }

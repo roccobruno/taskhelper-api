@@ -41,14 +41,13 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
 
     case payment: Payment => {
 
-      assignTask(payment.taskId,payment.taskHelperId)
+      assignTask(payment.taskId, payment.taskHelperId)
 
       val response = savePayment(payment)
 
       //send out alerts
       val alertActor = createSendAlertActor(context)
-      alertActor !  new AssignedTaskAlert(payment.taskId, payment.taskHelperId)
-
+      alertActor ! new AssignedTaskAlert(payment.taskId, payment.taskHelperId)
 
       httpRequestContext.complete(response)
       context.stop(self)
@@ -65,16 +64,15 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
       try {
         PaymentService.capturePayment(capture.taskId)
 
-       val taskServiceActor = createPerTaskActor(httpRequestContext)
-       taskServiceActor ! capture
+        val taskServiceActor = createPerTaskActor(httpRequestContext)
+        taskServiceActor ! capture
 
         //need to update the task status and send out an alert
-        updateTaskAttribute(capture.taskId,$set("status"-> TASK_STATUS.CLOSED.toString))
+        updateTaskAttribute(capture.taskId, $set("status" -> TASK_STATUS.CLOSED.toString))
         //send out alert
 
         val alertActor = createSendAlertActor(context)
         alertActor ! new ClosedTaskAlert(capture.taskId, "IT")
-
 
         httpRequestContext.complete(Response("Success", "1"))
       } catch {
@@ -98,8 +96,6 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
 
       try {
         transferMoneyForSTH(transfer.sthId, transfer.amount, transfer.currency, transfer.paypalEmail)
-
-
 
         httpRequestContext.complete(Response("Success", "1"))
       } catch {

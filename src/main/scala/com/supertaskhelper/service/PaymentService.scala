@@ -15,9 +15,7 @@ import com.supertaskhelper.util.ConverterUtil
 
 import scala.collection.JavaConversions
 
-trait PaymentService extends Service with ConverterUtil with IPaymentService with MongodbService{
-
-
+trait PaymentService extends Service with ConverterUtil with IPaymentService with MongodbService {
 
   def buildPayment(t: DBObject): Option[com.supertaskhelper.domain.Payment] = {
 

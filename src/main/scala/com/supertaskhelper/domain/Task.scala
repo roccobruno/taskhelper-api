@@ -56,8 +56,8 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
     requestType == TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString && taskPrice.isDefined && taskPrice.get.nOfHours.isDefined
     && taskPrice.get.tariffWithFeeForSth.isDefined && taskPrice.get.tariffWithoutFeeForSth.isDefined
   ), "when requestType is WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF nOfHours,tariffWithFeeForSth and tariffWithoutFeeForSth cannot be empty ")
-  require(!currency.isEmpty,"currency cannot be empty")
-  require((currency.get == CURRENCY.EUR.toString || currency.get == CURRENCY.GBP.toString),"currency must be either EUR or GBP")
+  require(!currency.isEmpty, "currency cannot be empty")
+  require((currency.get == CURRENCY.EUR.toString || currency.get == CURRENCY.GBP.toString), "currency must be either EUR or GBP")
 
 }
 
@@ -252,7 +252,7 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 }
 
 case class UpdateTaskStatusParams(id: String, status: String, language: Option[String]) {
-  require(!id.isEmpty,"taskId is missing")
+  require(!id.isEmpty, "taskId is missing")
   require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:" + TASK_STATUS.values())
 }
 

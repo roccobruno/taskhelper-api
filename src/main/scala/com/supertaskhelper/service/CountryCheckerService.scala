@@ -4,7 +4,7 @@ import com.supertaskhelper.common.service.ipaddress.CountryCheckerServiceImpl
 import com.typesafe.config.ConfigFactory
 import org.springframework.web.client.RestTemplate
 
-trait CountryCheckerService extends Service{
+trait CountryCheckerService extends Service {
 
   def checkCountryForIpAddress(ip: Option[String]): Option[String] = {
     if (ip.isDefined) {

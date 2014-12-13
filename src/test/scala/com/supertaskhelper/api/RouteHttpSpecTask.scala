@@ -96,6 +96,12 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
       }
 
 
+      import com.supertaskhelper.domain.TasksJsonFormat._
+      Get("/api/tasks?status=in(REQUESTACCEPTED,POSTED)") ~> route ~> check {
+        status should be(StatusCodes.OK)
+        assert(responseAs[Tasks].tasks(0).id == taskId)
+      }
+
 
 
 
@@ -321,7 +327,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
 
 
 
-    "accept request to delte a task" in {
+    "accept request to delete a task" in {
       Delete("/api/tasks?id=" + taskId.get) ~> route ~> check {
         status should be(StatusCodes.OK)
 
