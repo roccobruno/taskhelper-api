@@ -18,7 +18,7 @@ import org.bson.types.ObjectId
  * Time: 23:23
  * To change this template use File | Settings | File Templates.
  */
-trait TaskService extends Service with ConverterUtil with CityService  with MongodbService {
+trait TaskService extends Service with ConverterUtil with CityService  with MongodbService with UserService {
 
 
 
@@ -32,7 +32,7 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
     val bid = Bid(Option(new Date()),
       offeredValue.toString(),
       BigDecimal(task.taskPrice.get.priceSuggested.get).toString(),
-      task.hireSthId.get, "", "", Some(task.id.get.toString), Some("BID_" + (new Date()).getTime), None)
+      task.hireSthId.get, findUserById(task.hireSthId.get)._2.userName, "", Some(task.id.get.toString), Some("BID_" + (new Date()).getTime), None)
 
     createBid(bid, bid.id.get)
   }
@@ -45,7 +45,7 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
                              "taskHelperId"->sthId,
                              "assignedDate" -> new Date(),
                              "withHire"->false,
-                             "hireSthId" -> null))
+                             "hireSthId" -> sthId))
 
 
 
@@ -115,10 +115,11 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
       val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
       val tariffWithoutFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
       val tariffWithFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
+      val numOfWorkingHour: Option[Int] = if (priceObj != null) Option(priceObj.getAs[Int]("numOfWorkingHour").getOrElse(0)) else None;
 
       val taskType = if (address.address.isDefined) TASK_TYPE.OFFLINE.toString else TASK_TYPE.ONLINE.toString
       val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
-        taskResult.getAs[Boolean]("payPerHour"), Option(taskResult.getAs[Int]("hoursToDo").getOrElse(0)),
+        taskResult.getAs[Boolean]("payPerHour"), numOfWorkingHour,
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
         tariffWithoutFeeForSTH, tariffWithFeeForSTH)
