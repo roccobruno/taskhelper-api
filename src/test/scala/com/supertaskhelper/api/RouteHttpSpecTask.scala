@@ -137,6 +137,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
         assert(responseAs[Tasks].tasks(0).title == task.title)
         assert(responseAs[Tasks].tasks(0).description == task.description)
         assert(responseAs[Tasks].tasks(0).time == task.time)
+        assert(responseAs[Tasks].tasks(0).hireSthId == Some("52515bb0e4b094388a43ca39"))
         assert(responseAs[Tasks].tasks(0).address.get == task.address.get)
         assert(responseAs[Tasks].tasks(0).address.get.address == task.address.get.address)
         assert(responseAs[Tasks].tasks(0).address.get.city == task.address.get.city)
@@ -246,7 +247,7 @@ class RouteHttpSpecTask extends WordSpecLike with ScalatestRouteTest with Matche
       import com.supertaskhelper.domain.BidsJsonFormat._
       Get("/api/tasks/bids?taskId="+taskId.get) ~> route ~> check {
         status should be(StatusCodes.OK)
-        assert(responseAs[Bids].bids.size == 1)
+        assert(responseAs[Bids].bids.size == 2)
         assert(responseAs[Bids].bids(0).comment == bid.comment)
         assert(responseAs[Bids].bids(0).taskId == bid.taskId)
         assert(responseAs[Bids].bids(0).sthId == bid.sthId)

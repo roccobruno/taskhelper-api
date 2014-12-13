@@ -249,7 +249,7 @@ object TaskParamsFormat extends DefaultJsonProtocol {
 }
 
 case class UpdateTaskStatusParams(id: String, status: String, language: Option[String]) {
-
+  require(!id.isEmpty,"taskId is missing")
   require(!TASK_STATUS.valueOf(status).toString.isEmpty, "status can be one of:" + TASK_STATUS.values())
 }
 

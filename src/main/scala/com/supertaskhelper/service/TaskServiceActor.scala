@@ -149,6 +149,11 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
 
       if (params.status == TASK_STATUS.REQUESTACCEPTED.toString) {
         //task request. need to send ale(rt only to the choosen STH
+
+        createBidToTask(params.id)
+
+
+
         updateTaskStatus(params.id, params.status)
         sendAlertActor ! new AcceptedTaskRequestAlert(params.id, params.language.getOrElse("it"))
       }

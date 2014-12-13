@@ -21,22 +21,27 @@ import org.bson.types.ObjectId
 trait TaskService extends Service with ConverterUtil with CityService  with MongodbService {
 
 
+
+  def createBidToTask(taskId:String) = {
+
+    val task = findTaskById(taskId).get;
+
+
+
+    val offeredValue = BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.nOfHours.get))
+    val bid = Bid(Option(new Date()),
+      offeredValue.toString(),
+      BigDecimal(task.taskPrice.get.priceSuggested.get).toString(),
+      task.hireSthId.get, "", "", Some(task.id.get.toString), Some("BID_" + (new Date()).getTime), None)
+
+    createBid(bid, bid.id.get)
+  }
+
   def assignTask(taskId:String,sthId:String) = {
     val task = findTaskById(taskId);
     if(task.isDefined) {
 
-      if (task.get.status == TASK_STATUS.REQUESTACCEPTED.toString) {
-        val offeredValue = BigDecimal(task.get.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.get.taskPrice.get.nOfHours.get))
-        val bid = Bid(Option(new Date()),
-          offeredValue.toString(),
-          BigDecimal(task.get.taskPrice.get.priceSuggested.get).toString(),
-          task.get.hireSthId.get, "", "", Some(task.get.id.get.toString), Some("BID_" + (new Date()).getTime), None)
-
-        createBid(bid, bid.id.get)
-
-      }
-
-        updateTaskAttribute(taskId, $set("status"->TASK_STATUS.ASSIGNED.toString,
+              updateTaskAttribute(taskId, $set("status"->TASK_STATUS.ASSIGNED.toString,
                              "taskHelperId"->sthId,
                              "assignedDate" -> new Date(),
                              "withHire"->false,

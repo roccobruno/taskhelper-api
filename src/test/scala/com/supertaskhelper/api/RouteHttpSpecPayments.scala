@@ -130,7 +130,7 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
         None,
         new Date(),
         "17.00",
-        TASK_STATUS.REQUESTACCEPTED.toString,
+        TASK_STATUS.TOAPPROVEREQUEST.toString,
         "53028f49036462126f7f042b",
         None,
         None,
@@ -155,6 +155,18 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
         tId = responseAs[Response].id
 
       }
+
+      val updateTaskStatus = UpdateTaskStatusParams(tId,TASK_STATUS.REQUESTACCEPTED.toString,Some("it"))
+
+      import com.supertaskhelper.domain.UpdateTaskStatusParamsFormat._
+      Post("/api/tasks/update",updateTaskStatus) ~> route ~> check {
+
+        status should be(StatusCodes.OK)
+        assert(responseAs[Response].message.contains("Success"))
+
+
+      }
+
       var payIdNew1 = "PAY-3FX913169V0229117KRTXFIY"
 
       val payment2 = Payment(payIdNew1, Option(new java.util.Date()), tId, "52cd1539e4b041f92f2b2b17",
@@ -165,6 +177,8 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
         assert(responseAs[Response].message.contains("Resourse Added"))
 
       }
+
+
 
       import com.supertaskhelper.domain.TasksJsonFormat._
       Get("/api/tasks?id=" + tId) ~> route ~> check {
