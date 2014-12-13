@@ -3,7 +3,7 @@ package com.supertaskhelper.domain
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.supertaskhelper.common.enums.{TASK_REQUEST_TYPE, TASK_STATUS}
+import com.supertaskhelper.common.enums.{CURRENCY, TASK_REQUEST_TYPE, TASK_STATUS}
 import com.supertaskhelper.domain.search.Searchable
 import org.bson.types.ObjectId
 import spray.json._
@@ -56,6 +56,9 @@ case class Task(id: Option[ObjectId], title: String, description: String, create
     requestType == TASK_REQUEST_TYPE.WITH_DIRECT_HIRE_AND_TARIFF.toString && taskPrice.isDefined && taskPrice.get.nOfHours.isDefined
     && taskPrice.get.tariffWithFeeForSth.isDefined && taskPrice.get.tariffWithoutFeeForSth.isDefined
   ), "when requestType is WITH_AUCTION_FROM_DIRECT_HIRE_WITH_TARIFF nOfHours,tariffWithFeeForSth and tariffWithoutFeeForSth cannot be empty ")
+  require(!currency.isEmpty,"currency cannot be empty")
+  require((currency.get == CURRENCY.EUR.toString || currency.get == CURRENCY.GBP.toString),"currency must be either EUR or GBP")
+
 }
 
 case class TaskBadges(emailVerBudgetRequired: Option[Boolean],
