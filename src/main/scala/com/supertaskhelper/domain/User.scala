@@ -52,7 +52,13 @@ case class UserRegistration(userName: String, lastname: String, password: String
 
 }
 
-case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String, sthId: Option[String], language: Option[String])
+case class Feedback(userId: String, description: String, createdDate: Date, rating: Int, taskId: String, sthId: Option[String], language: Option[String]) {
+  require(!userId.isEmpty,"userId is missing")
+  require(!description.isEmpty,"description is missing")
+  require(!taskId.isEmpty,"taskId is missing")
+  require(!sthId.isEmpty,"sthId is missing")
+  require(rating>0,"rating is missing")
+}
 case class Feedbacks(feedbacks: Seq[Feedback])
 
 object FeedbackJsonFormat extends DefaultJsonProtocol {

@@ -25,12 +25,12 @@ trait TaskService extends Service with ConverterUtil with CityService  with Mong
     val task = findTaskById(taskId);
     if(task.isDefined) {
 
-      if (task.get.status == TASK_STATUS.REQUESTACCEPTED) {
+      if (task.get.status == TASK_STATUS.REQUESTACCEPTED.toString) {
         val offeredValue = BigDecimal(task.get.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.get.taskPrice.get.nOfHours.get))
         val bid = Bid(Option(new Date()),
           offeredValue.toString(),
           BigDecimal(task.get.taskPrice.get.priceSuggested.get).toString(),
-          task.get.hireSthId.get, "", "", Some(task.get.id.toString), Some("BID_" + (new Date()).getTime), None)
+          task.get.hireSthId.get, "", "", Some(task.get.id.get.toString), Some("BID_" + (new Date()).getTime), None)
 
         createBid(bid, bid.id.get)
 

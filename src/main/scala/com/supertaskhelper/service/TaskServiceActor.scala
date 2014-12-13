@@ -41,7 +41,6 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
   def receive = LoggingReceive {
 
     case f: Feedback => {
-      //TODO add PAYPAL CODE
       //update task status
       updateTaskStatus(f.taskId, TASK_STATUS.CLOSED.toString)
       val sendAlertActor = createSendAlertActor(context)

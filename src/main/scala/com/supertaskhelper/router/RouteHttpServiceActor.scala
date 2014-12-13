@@ -19,9 +19,8 @@ import com.supertaskhelper.security.UserAuthentication
 import com.supertaskhelper.security.UserTokensonFormat._
 import com.supertaskhelper.service.AccountServiceActor.FindAccount
 import com.supertaskhelper.service.DashboardServiceActor.LoadDashboard
-import com.supertaskhelper.service.PaymentServiceActor.CapturePaymentFormat._
 import com.supertaskhelper.service.PaymentServiceActor.TransferPaymentFormat._
-import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, DeletePayment, FindPayment, TransferPayment}
+import com.supertaskhelper.service.PaymentServiceActor.{DeletePayment, FindPayment, TransferPayment}
 import com.supertaskhelper.service.TaskServiceActor.{CreateBid, CreateComment, CreateTask, DeleteTask, FindBids, FindComments, FindTask, FindTaskCategory, _}
 import com.supertaskhelper.service.UserServiceActor.{CreateUser, _}
 import com.supertaskhelper.service.actors.ActivityActor
@@ -440,7 +439,7 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
           post {
             respondWithMediaType(MediaTypes.`application/json`) {
 
-              entity(as[CapturePayment]) { payment =>
+              entity(as[Feedback]) { payment =>
                 ctx => val paymentActor = createPerPaymentActor(ctx)
                 paymentActor ! payment
 

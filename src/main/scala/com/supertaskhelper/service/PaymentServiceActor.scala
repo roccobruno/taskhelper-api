@@ -1,6 +1,6 @@
 package com.supertaskhelper.service
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import com.mongodb.casbah.Imports._
 import com.supertaskhelper.common.enums.TASK_STATUS
@@ -8,8 +8,8 @@ import com.supertaskhelper.common.jms.alerts.{AssignedTaskAlert, ClosedTaskAlert
 import com.supertaskhelper.common.service.paypal.PayPalServiceException
 import com.supertaskhelper.domain.PaymentJsonFormat._
 import com.supertaskhelper.domain.ResponseJsonFormat._
-import com.supertaskhelper.domain.{Payment, Response}
-import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, DeletePayment, FindPayment, TransferPayment}
+import com.supertaskhelper.domain.{Feedback, Payment, Response}
+import com.supertaskhelper.service.PaymentServiceActor.{DeletePayment, FindPayment, TransferPayment}
 import com.supertaskhelper.util.ActorFactory
 import spray.http.StatusCodes
 import spray.httpx.SprayJsonSupport._
@@ -18,6 +18,13 @@ import spray.routing.RequestContext
 
 class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with ActorFactory with ActorLogging
     with UserService with PaymentService with TaskService with AlertMessageService {
+
+  def actorRefFactory = context
+
+  def createPerTaskActor(ctx: RequestContext): ActorRef = {
+
+    actorRefFactory.actorOf(Props(classOf[TaskServiceActor], ctx))
+  }
 
   def receive = LoggingReceive {
 
@@ -53,10 +60,13 @@ class PaymentServiceActor(httpRequestContext: RequestContext) extends Actor with
       context.stop(self)
     }
 
-    case capture: CapturePayment => {
+    case capture: Feedback => {
 
       try {
         PaymentService.capturePayment(capture.taskId)
+
+       val taskServiceActor = createPerTaskActor(httpRequestContext)
+       taskServiceActor ! capture
 
         //need to update the task status and send out an alert
         updateTaskAttribute(capture.taskId,$set("status"-> TASK_STATUS.CLOSED.toString))

@@ -36,7 +36,7 @@ class RouteHttpSpecDashboard extends WordSpecLike with ScalatestRouteTest with M
      "return dashboard with id" in {
        Get("/api/dashboard?userId="+userId) ~> route ~> check {
          status should be(StatusCodes.OK)
-         assert(responseAs[Dashboard].taskAsTP.assigned == 2)
+         assert(responseAs[Dashboard].taskAsTP.assigned == 4)
            assert(responseAs[Dashboard].taskAsTP.completed == 1)
            assert(responseAs[Dashboard].taskAsTP.open ==1)
            assert(responseAs[Dashboard].taskAsTP.closed ==3)

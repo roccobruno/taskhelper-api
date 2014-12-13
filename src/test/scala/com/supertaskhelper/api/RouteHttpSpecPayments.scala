@@ -7,9 +7,8 @@ import com.supertaskhelper.domain.PaymentJsonFormat._
 import com.supertaskhelper.domain.ResponseJsonFormat._
 import com.supertaskhelper.domain._
 import com.supertaskhelper.router.RouteHttpService
-import com.supertaskhelper.service.PaymentServiceActor.CapturePaymentFormat._
+import com.supertaskhelper.service.PaymentServiceActor.TransferPayment
 import com.supertaskhelper.service.PaymentServiceActor.TransferPaymentFormat._
-import com.supertaskhelper.service.PaymentServiceActor.{CapturePayment, TransferPayment}
 import org.scalatest.{Matchers, WordSpecLike}
 import spray.http.StatusCodes
 import spray.httpx.SprayJsonSupport._
@@ -98,8 +97,13 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
       }
     }
 
+    val feedback = Feedback("5383766d036457876c3dc24f","feedback test",new Date(),5,"5454dde50364b8976342f1dd",
+      Some("52cd1539e4b041f92f2b2b17"),Some("it"))
+    //test close task
+    import com.supertaskhelper.domain.FeedbackJsonFormat._
+
     "should capture a payment" in {
-      Post("/api/payments/capture", CapturePayment(taskId)) ~> route ~> check {
+      Post("/api/payments/capture", feedback) ~> route ~> check {
         status should be(StatusCodes.InternalServerError)
       }
     }
@@ -167,6 +171,8 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
         status should be(StatusCodes.OK)
         assert(responseAs[Tasks].tasks(0).id.get.toString == tId)
         assert(responseAs[Tasks].tasks(0).status == TASK_STATUS.ASSIGNED.toString)
+        assert(responseAs[Tasks].tasks(0).bids.isDefined)
+        assert(responseAs[Tasks].tasks(0).bids.get.size ==1)
 
       }
 
