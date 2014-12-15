@@ -18,8 +18,15 @@ import spray.json._
 
 case class Location(longitude: String, latitude: String)
 case class Bids(bids: Seq[Bid])
-case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue: String, sthId: String,
-    sth: String, comment: String, taskId: Option[String], id: Option[String], status: Option[String]) {
+case class Bid(createdDate: Option[Date],
+               offeredValue: String,
+               incrementedValue: String,
+               sthId: String,
+               sth: String,
+               comment: String,
+               taskId: Option[String],
+               id: Option[String],
+               status: Option[String]) {
 
   require(!incrementedValue.isEmpty, "incremented value cannot be empty")
   require(!offeredValue.isEmpty, "offeredValue  cannot be empty")
@@ -30,10 +37,28 @@ case class Bid(createdDate: Option[Date], offeredValue: String, incrementedValue
 }
 case class Address(address: Option[String], city: Option[String], country: String, location: Option[Location], postcode: Option[String], regione: Option[String])
 
-case class Task(id: Option[ObjectId], title: String, description: String, createdDate: Date, address: Option[Address], endDate: Date, time: String, status: String, userId: String,
-    bids: Option[Seq[Bid]], comments: Option[Seq[Comment]], distance: Option[String], category: Option[String],
-    categoryId: Option[String], taskType: String, badges: Option[TaskBadges], requestType: String, hireSthId: Option[String], taskPrice: Option[TaskPrice],
-    doneBy: Option[Boolean], bidAcceptedId: Option[String], currency: Option[String]) extends Searchable {
+case class Task(id: Option[ObjectId],
+    title: String,
+    description: String,
+    createdDate: Date,
+    address: Option[Address],
+    endDate: Date,
+    time: String,
+    status: String,
+    userId: String,
+    bids: Option[Seq[Bid]],
+    comments: Option[Seq[Comment]],
+    distance: Option[String],
+    category: Option[String],
+    categoryId: Option[String],
+    taskType: String,
+    badges: Option[TaskBadges],
+    requestType: String,
+    hireSthId: Option[String],
+    taskPrice: Option[TaskPrice],
+    doneBy: Option[Boolean],
+    bidAcceptedId: Option[String],
+    currency: Option[String]) extends Searchable {
 
   require(createdDate != null, "createdDate cannot be null")
   require(!title.isEmpty, "title cannot be empty")
@@ -65,12 +90,18 @@ case class TaskBadges(emailVerBudgetRequired: Option[Boolean],
   fbBudgetRequired: Option[Boolean], linkedInBudgetRequired: Option[Boolean], passportIdBudgetRequired: Option[Boolean],
   secDocBudgetRequired: Option[Boolean], twitterBudgetRequired: Option[Boolean], webcamBudgetRequired: Option[Boolean])
 
-case class TaskPrice(hasPriceSuggested: Option[Boolean], priceSuggested: Option[String],
-  isPerHour: Option[Boolean], nOfHours: Option[Int], toRepeat: Option[Boolean], nOfWeeks: Option[Int], tariffWithoutFeeForSth: Option[String],
-  tariffWithFeeForSth: Option[String])
+case class TaskPrice(hasPriceSuggested: Option[Boolean],
+  priceSuggested: Option[String],
+  isPerHour: Option[Boolean],
+  nOfHours: Option[Int],
+  toRepeat: Option[Boolean],
+  nOfWeeks: Option[Int],
+  tariffWithoutFeeForSth: Option[String],
+  tariffWithFeeForSth: Option[String],
+  numOfWorkingHour: Option[Int])
 
 object TaskPriceJsonFormat extends DefaultJsonProtocol {
-  implicit val taskPriceJsonFormat = jsonFormat8(TaskPrice)
+  implicit val taskPriceJsonFormat = jsonFormat9(TaskPrice)
 }
 object TaskBadgesJsonFormat extends DefaultJsonProtocol {
   implicit val taskBadgesJsonFormat = jsonFormat7(TaskBadges)
@@ -229,7 +260,7 @@ object TaskJsonFormat extends DefaultJsonProtocol {
   implicit val bidFormat = jsonFormat9(Bid)
   implicit val commentFormat = jsonFormat9(Comment)
   implicit val taskBadgesFormat = jsonFormat7(TaskBadges)
-  implicit val taskPriceFormat = jsonFormat8(TaskPrice)
+  implicit val taskPriceFormat = jsonFormat9(TaskPrice)
 
   implicit val taskFormat = jsonFormat22(Task)
 }

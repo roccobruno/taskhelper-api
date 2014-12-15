@@ -24,7 +24,7 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
 
     val task = findTaskById(taskId).get;
 
-    val offeredValue = BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.nOfHours.get))
+    val offeredValue = BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.numOfWorkingHour.get))
     val sthRes = findUserById(task.hireSthId.get)
     val sthUsername = if (sthRes._1) sthRes._2.userName else ""
     val bid = Bid(Option(new Date()),
@@ -153,14 +153,14 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
       val priceObj = taskResult.get("price").asInstanceOf[BasicDBObject]
       val tariffWithoutFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithoutFeeForSTH").getOrElse("")) else None;
       val tariffWithFeeForSTH: Option[String] = if (priceObj != null) Option(priceObj.getAs[String]("tariffWithFeeForSTH").getOrElse("")) else None;
-      val numOfWorkingHour: Option[Int] = if (priceObj != null) Option(priceObj.getAs[Int]("numOfWorkingHour").getOrElse(0)) else None;
+      val numOfWorkingHour: Option[Int] = if (priceObj != null) Option(priceObj.getAs[Int]("numOfWorkingHour").getOrElse(0)) else Some(0);
 
       val taskType = if (address.address.isDefined) TASK_TYPE.OFFLINE.toString else TASK_TYPE.ONLINE.toString
       val taskPrice = TaskPrice(taskResult.getAs[Boolean]("hasPriceSuggested"), Option(taskResult.getAs[String]("priceSuggested").getOrElse("")),
-        taskResult.getAs[Boolean]("payPerHour"), numOfWorkingHour,
+        taskResult.getAs[Boolean]("payPerHour"), taskResult.getAs[Int]("hoursToDo"),
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
-        tariffWithoutFeeForSTH, tariffWithFeeForSTH)
+        tariffWithoutFeeForSTH, tariffWithFeeForSTH,priceObj.getAs[Int]("numOfWorkingHour"))
 
       val task = Task(
         title = taskResult.getAs[String]("title").getOrElse(""),

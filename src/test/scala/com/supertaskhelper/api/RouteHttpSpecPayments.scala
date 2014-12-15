@@ -120,7 +120,7 @@ class RouteHttpSpecPayments extends WordSpecLike with ScalatestRouteTest with Ma
 
     "it should update Task status when payment is posted" in {
       //need to check that when a payment is made the related task is updated correctly
-      val taskPrice = TaskPrice(Option(true), Option("10"), Option(true), Option(2), Option(true), Option(3), Option("2"), Option("3"))
+      val taskPrice = TaskPrice(Option(true), Option("10"), Option(true), Option(2), Option(true), Option(3), Option("2"), Option("3"),Option(2))
       val taskBadge = TaskBadges(Option(true), Option(true), Option(true), Option(true), Option(true), Option(true), Option(true))
 
       val task = Task(None,
