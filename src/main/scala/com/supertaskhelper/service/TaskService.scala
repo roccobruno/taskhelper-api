@@ -133,6 +133,9 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
   private def buildTask(taskResult: DBObject, distance: Option[String]): Option[Task] = {
 
     try {
+
+      println(taskResult.getAs[ObjectId]("_id"))
+
       val bidss: Option[Seq[Bid]] =
         if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {
           Option(taskResult.get("bids").asInstanceOf[BasicDBList].map(x => buildBid(x.asInstanceOf[BasicDBObject], taskResult.getAs[ObjectId]("_id").get.toString)).toSeq.sortWith(_.createdDate.get after _.createdDate.get)
@@ -163,7 +166,8 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
         taskResult.getAs[Boolean]("payPerHour"), taskResult.getAs[Int]("hoursToDo"),
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
-        tariffWithoutFeeForSTH, tariffWithFeeForSTH, priceObj.getAs[Int]("numOfWorkingHour"))
+        tariffWithoutFeeForSTH, tariffWithFeeForSTH,
+        if (priceObj != null) priceObj.getAs[Int]("numOfWorkingHour") else None)
 
       val task = Task(
         title = taskResult.getAs[String]("title").getOrElse(""),

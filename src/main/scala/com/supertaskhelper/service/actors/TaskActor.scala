@@ -1,11 +1,11 @@
 package com.supertaskhelper.service.actors
 
-import akka.actor.{ ActorLogging, Actor }
+import akka.actor.{Actor, ActorLogging}
 import akka.event.LoggingReceive
+import com.supertaskhelper.domain.Tasks
+import com.supertaskhelper.service.TaskService
 import com.supertaskhelper.service.TaskServiceActor.FindTask
 import com.supertaskhelper.util.ActorFactory
-import com.supertaskhelper.domain.{ Task, Tasks, TaskParams }
-import com.supertaskhelper.service.TaskService
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,7 +21,7 @@ class TaskActor extends Actor with ActorLogging with ActorFactory with TaskServi
 
       val task = findTask(params.params)
       val res = (if (task.size > 0) Tasks(task.filter(_.isDefined).map(x => x.get)) else TaskNotFound(""))
-      log.info(sender.toString())
+
       sender ! res
       context.stop(self)
     }

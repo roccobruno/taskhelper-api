@@ -58,7 +58,6 @@ class TaskServiceActor(httpRequestContext: RequestContext) extends Actor with Ac
     }
 
     case t: Tasks => {
-      t.tasks.foreach(x => println(x))
 
       httpRequestContext.complete(t)
       context.stop(self)
