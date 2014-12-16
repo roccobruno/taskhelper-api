@@ -19,14 +19,14 @@ import spray.json._
 case class Location(longitude: String, latitude: String)
 case class Bids(bids: Seq[Bid])
 case class Bid(createdDate: Option[Date],
-               offeredValue: String,
-               incrementedValue: String,
-               sthId: String,
-               sth: String,
-               comment: String,
-               taskId: Option[String],
-               id: Option[String],
-               status: Option[String]) {
+    offeredValue: String,
+    incrementedValue: String,
+    sthId: String,
+    sth: String,
+    comment: String,
+    taskId: Option[String],
+    id: Option[String],
+    status: Option[String]) {
 
   require(!incrementedValue.isEmpty, "incremented value cannot be empty")
   require(!offeredValue.isEmpty, "offeredValue  cannot be empty")

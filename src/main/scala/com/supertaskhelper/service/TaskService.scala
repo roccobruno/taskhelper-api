@@ -7,6 +7,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.supertaskhelper.MongoFactory
 import com.supertaskhelper.common.enums.{COMMENT_STATUS, TASK_REQUEST_TYPE, TASK_STATUS, TASK_TYPE}
+import com.supertaskhelper.common.util.PaymentUtil
 import com.supertaskhelper.domain.{Address, Location, Response, Task, _}
 import com.supertaskhelper.util.ConverterUtil
 import org.bson.types.ObjectId;
@@ -24,7 +25,9 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
 
     val task = findTaskById(taskId).get;
 
-    val offeredValue = BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.numOfWorkingHour.get))
+    val valueFromSuggestedPrice = PaymentUtil.getValueWithoutFee(new java.math.BigDecimal(task.taskPrice.get.priceSuggested.getOrElse("0")))
+    val offeredValue = if (task.taskPrice.get.tariffWithoutFeeForSth.isDefined) BigDecimal(task.taskPrice.get.tariffWithoutFeeForSth.get).*(BigDecimal(task.taskPrice.get.numOfWorkingHour.get))
+    else BigDecimal(valueFromSuggestedPrice.toString)
     val sthRes = findUserById(task.hireSthId.get)
     val sthUsername = if (sthRes._1) sthRes._2.userName else ""
     val bid = Bid(Option(new Date()),
@@ -160,7 +163,7 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
         taskResult.getAs[Boolean]("payPerHour"), taskResult.getAs[Int]("hoursToDo"),
         taskResult.getAs[Boolean]("repeat"),
         Option(taskResult.getAs[Int]("timesToRepeat").getOrElse(0)),
-        tariffWithoutFeeForSTH, tariffWithFeeForSTH,priceObj.getAs[Int]("numOfWorkingHour"))
+        tariffWithoutFeeForSTH, tariffWithFeeForSTH, priceObj.getAs[Int]("numOfWorkingHour"))
 
       val task = Task(
         title = taskResult.getAs[String]("title").getOrElse(""),
