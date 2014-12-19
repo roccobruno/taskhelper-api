@@ -160,6 +160,7 @@ trait UserService extends Service with ConverterUtil {
         Option(addobj.getString("postcode")), Option(addobj.getString("regione"))))
       else None
 
+
       user = User(
         userName = userResult.getAs[String]("username").get,
         lastName = userResult.getAs[String]("lastName").get,

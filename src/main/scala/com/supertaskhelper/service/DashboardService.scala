@@ -10,14 +10,15 @@ trait DashboardService extends TaskService {
 
   def loadDashboardData(userId: Option[String]): Dashboard = {
 
-    val openedTasksTP = findTasksCount(TASK_STATUS.POSTED.toString, userId, None)
-    val assignedTasksTP = findTasksCount(TASK_STATUS.ASSIGNED.toString, userId, None)
-    val completedTasksTP = findTasksCount(TASK_STATUS.COMPLETED.toString, userId, None)
-    val closedTasksTP = findTasksCount(TASK_STATUS.CLOSED.toString, userId, None)
-    val requestedTP = findTasksCount(TASK_STATUS.TOAPPROVEREQUEST.toString, userId, None)
-    val waitingTP = findTasksCount(TASK_STATUS.TOVERIFY.toString, userId, None)
+//    val openedTasksTP = findTasksCount(TASK_STATUS.POSTED.toString, userId, None)
+    val openedTasksTP = count(TASK_STATUS.POSTED.toString, userId, None)
+    val assignedTasksTP = count(TASK_STATUS.ASSIGNED.toString, userId, None)
+    val completedTasksTP = count(TASK_STATUS.COMPLETED.toString, userId, None)
+    val closedTasksTP = count(TASK_STATUS.CLOSED.toString, userId, None)
+    val requestedTP = count(TASK_STATUS.TOAPPROVEREQUEST.toString, userId, None)
+    val waitingTP = count(TASK_STATUS.TOVERIFY.toString, userId, None)
 
-    val tPTasksStats = TPTasksStats(openedTasksTP, assignedTasksTP, completedTasksTP, closedTasksTP, requestedTP, waitingTP)
+    val tPTasksStats = TPTasksStats(openedTasksTP.toInt, assignedTasksTP.toInt, completedTasksTP.toInt, closedTasksTP.toInt, requestedTP.toInt, waitingTP.toInt)
 
     val openedTasksSTH = findTasksCount(TASK_STATUS.POSTED.toString, None, userId)
     val assignedTasksSTH = findTasksCount(TASK_STATUS.ASSIGNED.toString, None, userId)
@@ -84,4 +85,19 @@ trait DashboardService extends TaskService {
       None,
       None)).map(x => x.get).map(x => buildDiffTask(x))
   }
+  def count(status: String, userId: Option[String], sthId: Option[String]): Long = {
+    countTasks(TaskParams(None,
+      Some(status),
+      userId,
+      sthId,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None))
+  }
+
 }

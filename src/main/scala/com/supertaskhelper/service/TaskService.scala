@@ -62,6 +62,15 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
     result
   }
 
+  def countTasks(params: TaskParams): Long = {
+
+    val q = buildQueryDsl(params)
+    //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
+    val collection = MongoFactory.getCollection("task")
+    var result = collection count q
+    result
+  }
+
   private def buildQueryDsl(params: TaskParams): DBObject = {
     var res: List[(String, Any)] = List()
     if (params.id.isDefined && ObjectId.isValid(params.id.get))
@@ -134,7 +143,6 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
 
     try {
 
-      println(taskResult.getAs[ObjectId]("_id"))
 
       val bidss: Option[Seq[Bid]] =
         if (taskResult.get("bids").asInstanceOf[BasicDBList] != null) {

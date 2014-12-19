@@ -189,7 +189,6 @@ trait RouteHttpService extends HttpService with UserAuthentication with EmailSen
               respondWithMediaType(MediaTypes.`application/json`) {
                 entity(as[UserRegistration]) { user =>
                   ctx => val perRequestSearchingActor = createPerUserActor(ctx)
-                  println("Client's ip is " + ip.toOption.map(_.getHostAddress).getOrElse("unknown"))
                   perRequestSearchingActor ! CreateUser(user, "it", ip.toOption.map(_.getHostAddress))
 
                 }
