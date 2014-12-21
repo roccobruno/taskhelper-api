@@ -10,23 +10,47 @@ trait DashboardService extends TaskService {
 
   def loadDashboardData(userId: Option[String]): Dashboard = {
 
-//    val openedTasksTP = findTasksCount(TASK_STATUS.POSTED.toString, userId, None)
-    val openedTasksTP = count(TASK_STATUS.POSTED.toString, userId, None)
-    val assignedTasksTP = count(TASK_STATUS.ASSIGNED.toString, userId, None)
-    val completedTasksTP = count(TASK_STATUS.COMPLETED.toString, userId, None)
-    val closedTasksTP = count(TASK_STATUS.CLOSED.toString, userId, None)
-    val requestedTP = count(TASK_STATUS.TOAPPROVEREQUEST.toString, userId, None)
-    val waitingTP = count(TASK_STATUS.TOVERIFY.toString, userId, None)
 
-    val tPTasksStats = TPTasksStats(openedTasksTP.toInt, assignedTasksTP.toInt, completedTasksTP.toInt, closedTasksTP.toInt, requestedTP.toInt, waitingTP.toInt)
 
-    val openedTasksSTH = findTasksCount(TASK_STATUS.POSTED.toString, None, userId)
-    val assignedTasksSTH = findTasksCount(TASK_STATUS.ASSIGNED.toString, None, userId)
-    val completedTaskSTH = findTasksCount(TASK_STATUS.COMPLETED.toString, None, userId)
-    val closedTasksSTH = findTasksCount(TASK_STATUS.CLOSED.toString, None, userId)
-    val requestedSTH = findTasksCount(TASK_STATUS.TOAPPROVEREQUEST.toString, None, userId)
+    val aggrResult:Seq[AggrResult] = countTasksWithAggregation(TaskParams(None,
+      None,
+      userId,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None))
 
-    val sTHTasksStats = STHTasksStats(openedTasksSTH, assignedTasksSTH, completedTaskSTH, closedTasksSTH, requestedSTH)
+  val tPTasksStats = TPTasksStats(
+                                    getResultForStatus(aggrResult,TASK_STATUS.POSTED.toString),
+                                    getResultForStatus(aggrResult,TASK_STATUS.ASSIGNED.toString),
+                                    getResultForStatus(aggrResult,TASK_STATUS.COMPLETED.toString),
+    getResultForStatus(aggrResult,TASK_STATUS.CLOSED.toString),
+    getResultForStatus(aggrResult,TASK_STATUS.TOAPPROVEREQUEST.toString),
+    getResultForStatus(aggrResult,TASK_STATUS.TOVERIFY.toString))
+
+    val aggrResultForSth:Seq[AggrResult] = countTasksWithAggregation(TaskParams(None,
+      None,
+      None,
+      userId,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None,
+      None))
+
+    val sTHTasksStats = STHTasksStats(getResultForStatus(aggrResultForSth,TASK_STATUS.POSTED.toString),
+      getResultForStatus(aggrResultForSth,TASK_STATUS.ASSIGNED.toString),
+      getResultForStatus(aggrResultForSth,TASK_STATUS.COMPLETED.toString),
+      getResultForStatus(aggrResultForSth,TASK_STATUS.CLOSED.toString),
+      getResultForStatus(aggrResultForSth,TASK_STATUS.TOAPPROVEREQUEST.toString))
 
     val service = new PaymService
     val obbligations = PaymentUtil.populateFormWithObligationForm(userId.get,
@@ -42,6 +66,11 @@ trait DashboardService extends TaskService {
     logger.info(s"Dashboard:${res}")
     res
 
+  }
+
+  def getResultForStatus(aggrResult: Seq[AggrResult],status:String): Int = {
+    val notDefined: AggrResult = AggrResult("NOT_DEFINED",0)
+    aggrResult.find(x => (x.status == status)).getOrElse(notDefined).number
   }
 
   class PaymService extends PaymentService

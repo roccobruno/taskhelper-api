@@ -2,6 +2,7 @@ package com.supertaskhelper.service
 
 import java.util.Date
 
+import com.mongodb
 import com.mongodb.BasicDBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -64,11 +65,32 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
 
   def countTasks(params: TaskParams): Long = {
 
+
     val q = buildQueryDsl(params)
     //    val q = MongoDBObject("_id" -> new org.bson.types.ObjectId(params.id.get))
     val collection = MongoFactory.getCollection("task")
     var result = collection count q
     result
+  }
+
+  def buildAggRest(bObject: mongodb.DBObject): AggrResult = {
+
+    AggrResult(bObject.getAs[String]("_id").getOrElse("NOT_DEFINED"),bObject.getAs[Int]("number").getOrElse(0))
+  }
+
+  def countTasksWithAggregation(params: TaskParams):Seq[AggrResult] = {
+    val q = buildQueryDsl(params)
+    val collection = MongoFactory.getCollection("task")
+    var result = collection aggregate (matchDbObject(q),groupDbObject)
+    result.results.map(x => buildAggRest(x)).toSeq
+  }
+
+  def matchDbObject(query:MongoDBObject):DBObject = {
+    MongoDBObject("$match" -> query)
+  }
+
+  def groupDbObject():DBObject ={
+    MongoDBObject("$group" -> MongoDBObject("_id" -> "$status", "number" -> MongoDBObject("$sum" ->1)))
   }
 
   private def buildQueryDsl(params: TaskParams): DBObject = {
@@ -498,6 +520,8 @@ trait TaskService extends Service with ConverterUtil with CityService with Mongo
 
     obj
   }
+
+  case class AggrResult(status:String,number:Int)
 
 }
 
